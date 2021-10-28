@@ -1,11 +1,11 @@
 {
-    "name": "konekt/pdf-invoice",
+    "name": "herdwatch/pdf-invoice",
     "description": "Library to generate PDF invoices",
     "type": "library",
     "license": "GPL-2.0-or-later",
-    "keywords": ["invoice", "pdf", "konekt", "artkonekt"],
+    "keywords": ["invoice", "pdf", "herdwatch","konekt", "artkonekt"],
     "support": {
-        "source": "https://github.com/artkonekt/pdf-invoice"
+        "source": "https://github.com/herdwatch/pdf-invoice"
     },
     "authors": [
         {
@@ -14,7 +14,7 @@
         }
     ],
     "require": {
-        "php": "^7.3|^8.0",
+        "php": "^7.4|^8.0",
         "ext-iconv": "*",
         "ext-mbstring": "*",
         "setasign/fpdf": "~1.8.1"
@@ -23,11 +23,11 @@
         "phpunit/phpunit": "8 - 9"
     },
     "autoload": {
-        "psr-4": { "Konekt\\PdfInvoice\\": "src/" }
+        "psr-4": { "herdwatch\\PdfInvoice\\": "src/" }
     },
     "autoload-dev": {
         "psr-4": {
-            "Konekt\\PdfInvoice\\Tests\\": "tests/"
+            "herdwatch\\PdfInvoice\\Tests\\": "tests/"
         }
     }
 }

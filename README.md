@@ -9,7 +9,7 @@
 This is a streamlined fork of [pdf-invoicr](https://github.com/farjadtahir/pdf-invoicr).
 
 Changes:
-- PHP 7.3 - 8.0 Support
+- PHP 7.4 - 8.0 Support
 - PSR-4 compatible
 - Available as composer package
 - Dependencies are coming via composer

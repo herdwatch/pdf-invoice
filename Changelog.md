@@ -1,5 +1,10 @@
 # Changelog
 
+### 1.10.2
+##### 2021-10-28
+
+- Add possibility to change align and currency code for price column and desired row(s)
+
 ### 1.10.1
 ##### 2021-09-28
 
