@@ -1,6 +1,6 @@
 <?php
 
-use Konekt\PdfInvoice\InvoicePrinter;
+use Herdwatch\PdfInvoice\InvoicePrinter;
 
 include '../src/InvoicePrinter.php';
 $invoice = new InvoicePrinter();

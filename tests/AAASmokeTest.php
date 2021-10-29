@@ -9,7 +9,7 @@
  * @since       2017-12-15
  */
 
-namespace herdwatch\PdfInvoice\Tests;
+namespace Herdwatch\PdfInvoice\Tests;
 
 use PHPUnit\Framework\TestCase;
 

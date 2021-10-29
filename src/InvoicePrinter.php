@@ -11,7 +11,7 @@
  * @since       2017-12-15
  */
 
-namespace herdwatch\PdfInvoice;
+namespace Herdwatch\PdfInvoice;
 
 use DateTimeZone;
 use Exception;
@@ -29,43 +29,10 @@ class InvoicePrinter extends FPDF
     public const SIZE_A4               = 'A4';
     public const SIZE_LETTER           = 'letter';
     public const SIZE_LEGAL            = 'legal';
+    public const TOTAL_ALIGNMENT_VERTICAL = 'vertical';
+    public const TOTAL_ALIGNMENT_HORIZONTAL = 'horizontal';
 
-    protected const LANG_MESSAGES = [
-        'en' => [
-            'number' => 'Reference',
-            'date'   => 'Billing date',
-            'time'   => 'Billing time',
-            'due'    => 'Due date',
-            'to'     => 'Billing to',
-            'from'   => 'Billing from',
-            'product'=> 'Product',
-            'qty'    => 'Qty',
-            'price'  => 'Price',
-            'discount' => 'Discount',
-            'vat'      => 'Vat',
-            'total'    => 'Total',
-            'page'     => 'Page',
-            'page_of'  => 'of'
-        ],
-        'fr' => [
-            'number' => 'Référence',
-            'date'   => 'Date de facturation',
-            'time'   => 'Heure de facturation',
-            'due'    => 'Date d\'échéance',
-            'to'     => 'Facturé à',
-            'from'   => 'Facturé par',
-            'product'=> 'Produit',
-            'qty'    => 'Quantité',
-            'price'  => 'Prix unit. HT',
-            'discount' => 'Réduction',
-            'vat'      => 'TVA',
-            'total'    => 'Total',
-            'page'     => 'Page',
-            'page_of'  => 'sur'
-        ],
-    ];
-
-    public int $angle = 0;
+  public int $angle = 0;
     public string $font = 'helvetica';                 /* Font Name : See inc/fpdf/font for all supported fonts */
     public float $columnOpacity = 0.06;               /* Items table background color opacity. Range (0.00 - 1) */
     public float $columnSpacing = 0.3;                /* Spacing between Item Tables */
@@ -90,6 +57,7 @@ class InvoicePrinter extends FPDF
     public array $to = [''];
     public array $items = [];
     public array $totals = [];
+    public string $totalsAlignment = self::TOTAL_ALIGNMENT_VERTICAL;
     public string $badge = '';
     public array $addText = [];
     public string $footerNote = '';
@@ -272,6 +240,12 @@ class InvoicePrinter extends FPDF
     public function setReference(string $reference): void
     {
         $this->reference = $reference;
+    }
+
+
+    public function setTotalsAlignment(string $alignment): void
+    {
+        $this->totalsAlignment = $alignment;
     }
 
     public function setNumberFormat(
@@ -579,22 +553,62 @@ class InvoicePrinter extends FPDF
     protected function addTotals($bgColor, int $cellHeight, $width_other): void
     {
         if ($this->totals) {
-            foreach ($this->totals as $total) {
+            if ($this->totalsAlignment === self::TOTAL_ALIGNMENT_HORIZONTAL) {
+                $this->Ln(2);
+                $totalsCount = count($this->totals);
+                $cellWidth = ($this->document['w'] - $this->margins['l'] - $this->margins['r']) / $totalsCount;
+                // Colors, line width and bold font
+                $this->SetFillColor($this->color[0], $this->color[1], $this->color[2]);
+                $this->SetTextColor(255, 255, 255);
+                $this->SetDrawColor($this->color[0], $this->color[1], $this->color[2]);
+                $this->SetLineWidth(.3);
+                $this->SetFont($this->font, 'b', 8);
+                // Header
+                for ($i=0;$i<$totalsCount;$i++) {
+                    $this->Cell(
+                        $totalsCount % 2 == 0 ? ($i % 2 == 0 ? $cellWidth + 5 : $cellWidth - 5) : $cellWidth,
+                        7,
+                        iconv(self::ICONV_CHARSET_INPUT, self::ICONV_CHARSET_OUTPUT_B, $this->totals[$i]['name']),
+                        1,
+                        0,
+                        'C',
+                        true
+                    );
+                }
+                $this->Ln();
+                // Values
                 $this->SetTextColor(50, 50, 50);
+                $this->SetFont($this->font, 'b', 8);
                 $this->SetFillColor($bgColor, $bgColor, $bgColor);
-                $this->Cell(1 + $this->firstColumnWidth, $cellHeight, '', 0, 0, 'L', 0);
-                for ($i = 0; $i < $this->columns - 3; $i++) {
+                for ($y=0;$y<$totalsCount;$y++) {
+                    $this->Cell(
+                        $totalsCount % 2 == 0 ? ($y % 2 == 0 ? $cellWidth + 5 : $cellWidth - 5) : $cellWidth,
+                        6,
+                        iconv(self::ICONV_CHARSET_INPUT, self::ICONV_CHARSET_OUTPUT_B, $this->totals[$y]['value']),
+                        'LRB',
+                        0,
+                        'C',
+                        $this->totals[$y]['colored']
+                    );
+                }
+                $this->Ln();
+            } else {
+                foreach ($this->totals as $total) {
+                  $this->SetTextColor(50, 50, 50);
+                  $this->SetFillColor($bgColor, $bgColor, $bgColor);
+                  $this->Cell(1 + $this->firstColumnWidth, $cellHeight, '', 0, 0, 'L', 0);
+                  for ($i = 0; $i < $this->columns - 3; $i++) {
                     $this->Cell($width_other, $cellHeight, '', 0, 0, 'L', 0);
                     $this->Cell($this->columnSpacing, $cellHeight, '', 0, 0, 'L', 0);
-                }
-                $this->Cell($this->columnSpacing, $cellHeight, '', 0, 0, 'L', 0);
-                if ($total['colored']) {
+                  }
+                  $this->Cell($this->columnSpacing, $cellHeight, '', 0, 0, 'L', 0);
+                  if ($total['colored']) {
                     $this->SetTextColor(255, 255, 255);
                     $this->SetFillColor($this->color[0], $this->color[1], $this->color[2]);
-                }
-                $this->SetFont($this->font, 'b', 8);
-                $this->Cell(1, $cellHeight, '', 0, 0, 'L', 1);
-                $this->Cell(
+                  }
+                  $this->SetFont($this->font, 'b', 8);
+                  $this->Cell(1, $cellHeight, '', 0, 0, 'L', 1);
+                  $this->Cell(
                     $width_other - 1,
                     $cellHeight,
                     iconv(self::ICONV_CHARSET_INPUT, self::ICONV_CHARSET_OUTPUT_B, $total['name']),
@@ -609,11 +623,12 @@ class InvoicePrinter extends FPDF
                 if ($total['colored']) {
                     $this->SetTextColor(255, 255, 255);
                     $this->SetFillColor($this->color[0], $this->color[1], $this->color[2]);
-                }
-                $this->Cell($width_other, $cellHeight,
+                  }
+                  $this->Cell($width_other, $cellHeight,
                     iconv(self::ICONV_CHARSET_INPUT, self::ICONV_CHARSET_OUTPUT_B, $total['value']), 0, 0, 'C', 1);
-                $this->Ln();
-                $this->Ln($this->columnSpacing);
+                  $this->Ln();
+                  $this->Ln($this->columnSpacing);
+                }
             }
         }
     }

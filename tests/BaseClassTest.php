@@ -9,9 +9,9 @@
  * @since       2017-12-15
  */
 
-namespace herdwatch\PdfInvoice\Tests;
+namespace Herdwatch\PdfInvoice\Tests;
 
-use herdwatch\PdfInvoice\InvoicePrinter;
+use Herdwatch\PdfInvoice\InvoicePrinter;
 use PHPUnit\Framework\TestCase;
 
 class BaseClassTest extends TestCase

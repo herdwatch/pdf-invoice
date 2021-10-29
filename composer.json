@@ -23,11 +23,11 @@
         "phpunit/phpunit": "8 - 9"
     },
     "autoload": {
-        "psr-4": { "herdwatch\\PdfInvoice\\": "src/" }
+        "psr-4": { "Herdwatch\\PdfInvoice\\": "src/" }
     },
     "autoload-dev": {
         "psr-4": {
-            "herdwatch\\PdfInvoice\\Tests\\": "tests/"
+            "Herdwatch\\PdfInvoice\\Tests\\": "tests/"
         }
     }
 }

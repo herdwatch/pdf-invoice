@@ -1,6 +1,6 @@
 <?php
 
-use Konekt\PdfInvoice\InvoicePrinter;
+use Herdwatch\PdfInvoice\InvoicePrinter;
 
 include '../src/InvoicePrinter.php';
 $invoice = new InvoicePrinter();
@@ -20,7 +20,7 @@ $invoice = new InvoicePrinter();
   $invoice->addItem('LG 18.5" WLCD', '', 10, 0, 230, 0, 2300);
   $invoice->addItem('HP LaserJet 5200', '', 1, 0, 1100, 0, 1100);
   /* Set totals alignment */
-  $invoice->setTotalsAlignment('horizontal');
+  $invoice->setTotalsAlignment(InvoicePrinter::TOTAL_ALIGNMENT_HORIZONTAL);
   /* Add totals */
   $invoice->addTotal('Total', 9460);
   $invoice->addTotal('VAT 21%', 1986.6);

@@ -1,6 +1,6 @@
 <?php
 
-use Konekt\PdfInvoice\InvoicePrinter;
+use Herdwatch\PdfInvoice\InvoicePrinter;
 
 include '../src/InvoicePrinter.php';
 $invoice = new InvoicePrinter();
@@ -11,7 +11,7 @@ $invoice = new InvoicePrinter();
   $invoice->setReference('55033645');
   $invoice->setDate(date('d-m-Y', time()));
   $invoice->setDue(date('d-m-Y', strtotime('+3 months')));
-  $invoice->hide_tofrom();
+  $invoice->hideToFrom();
   /* Adding Items in table */
   $invoice->addItem('AMD Athlon X2DC-7450', '2.4GHz/1GB/160GB/SMP-DVD/VB', 6, false, 580, false, 3480);
   $invoice->addItem('PDC-E5300', '2.6GHz/1GB/320GB/SMP-DVD/FDD/VB', 4, false, 645, false, 2580);
