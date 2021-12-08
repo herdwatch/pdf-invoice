@@ -41,6 +41,7 @@ class InvoicePrinter extends FPDF
         'l' => 15,
         't' => 15,
         'r' => 15,
+        'b' => 15
     ]; /* l: Left Side , t: Top Side , r: Right Side */
     public int $fontSizeProductDescription = 7;                /* font size of product description */
 
@@ -469,10 +470,12 @@ class InvoicePrinter extends FPDF
 
     public function Footer(): void
     {
-        $this->SetY(-$this->margins['t']);
+        $bottomMargin = $this->margins['b'];
+        $bottomMargin += 5*count(explode(PHP_EOL, $this->footerNote));
+        $this->SetY(-$bottomMargin);
         $this->SetFont($this->font, '', 8);
         $this->SetTextColor(50, 50, 50);
-        $this->Cell(0, 10, $this->footerNote, 0, 0, 'L');
+        $this->MultiCell(0, 5, $this->footerNote, 0, 'L');
         $this->Cell(
             0,
             10,
