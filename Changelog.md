@@ -1,5 +1,9 @@
 # Changelog
 
+### 1.10.4
+##### 2022-02-10
+- Reduce quantity column width
+
 ### 1.10.3
 ##### 2021-12-08
 - Add multiline footers
