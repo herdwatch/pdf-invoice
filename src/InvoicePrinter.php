@@ -448,9 +448,25 @@ class InvoicePrinter extends FPDF
 
     public function Body(): void
     {
-        $defaultColumnsWidth = ($this->document['w'] - $this->margins['l'] - $this->margins['r'] - $this->firstColumnWidth - ($this->columns * $this->columnSpacing)) / ($this->columns - 1);
+        $defaultColumnsWidth = 0;
+        if ($this->columns > 1) {
+          $defaultColumnsWidth = ($this->document['w']
+              - $this->margins['l']
+              - $this->margins['r']
+              - $this->firstColumnWidth
+              - ($this->columns * $this->columnSpacing)) / ($this->columns - 1);
+        }
         $widthQuantity = $defaultColumnsWidth - 15;
-        $width_other = ($this->document['w'] - $this->margins['l'] - $this->margins['r'] - $this->firstColumnWidth - $widthQuantity + 1.2 - ($this->columns - 1)) / ($this->columns - 2);
+        $width_other = 0;
+        if ($this->columns > 2) {
+          $width_other = ($this->document['w']
+              - $this->margins['l']
+              - $this->margins['r']
+              - $this->firstColumnWidth
+              - $widthQuantity
+              + 1.2
+              - ($this->columns - 1)) / ($this->columns - 2);
+        }
 
         $cellHeight = 8;
         $bgColor = (1 - $this->columnOpacity) * 255;
