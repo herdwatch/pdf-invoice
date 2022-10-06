@@ -3,6 +3,7 @@
     $lang['date']     = 'Kuupäev';
     $lang['time']     = 'Kellaaeg';
     $lang['due']      = 'Tähtaeg';
+    $lang['payment']  = 'Maksekuupäev';
     $lang['to']       = 'Ostja';
     $lang['from']     = 'Müüja';
     $lang['product']  = 'Toode';

@@ -3,6 +3,7 @@
     $lang['date']     = 'Data';
     $lang['time']     = 'Godzina';
     $lang['due']      = 'Termin płatności';
+    $lang['payment']  = 'Termin płatności';
     $lang['to']       = 'Nabywca';
     $lang['from']     = 'Sprzedawca';
     $lang['product']  = 'Produkt';

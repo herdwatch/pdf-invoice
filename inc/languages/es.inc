@@ -3,6 +3,7 @@
     $lang['date']     = 'Fecha';
     $lang['due']      = 'Fecha de vencimiento';
     $lang['time']     = 'Fecha de factura';
+    $lang['payment']  = 'Fecha de pago';
     $lang['to']       = 'Facturación a';
     $lang['from']     = 'Nuestra información ';
     $lang['product']  = 'Producto';

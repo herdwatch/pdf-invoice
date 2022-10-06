@@ -2,6 +2,7 @@
     $lang['number']   = 'Riferimento';
     $lang['date']     = 'Data di fatturazione';
     $lang['due']      = 'Scadenza';
+    $lang['payment']  = 'Data di pagamento';
     $lang['to']       = 'Fatturazione per';
     $lang['from']     = 'Nostre informazioni';
     $lang['product']  = 'Prodotto';

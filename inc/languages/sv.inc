@@ -3,6 +3,7 @@
     $lang['date']     = 'Faktura Datum';
     $lang['time']     = 'Tid';
     $lang['due']      = 'Sista betalnings dag';
+    $lang['payment']  = 'Betalningsdatum';
     $lang['to']       = 'Till';
     $lang['from']     = 'Från';
     $lang['product']  = 'Produkt';

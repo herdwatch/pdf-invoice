@@ -3,6 +3,7 @@
     $lang['date']     = 'Rechnungsdatum';
     $lang['time']     = 'Rechnungs-Uhrzeit';
     $lang['due']      = 'Fälligkeitsdatum';
+    $lang['payment']  = 'Zahlungsdatum';
     $lang['to']       = 'Rechnungsempfänger';
     $lang['from']     = 'Rechnung von';
     $lang['product']  = 'Produkt';
