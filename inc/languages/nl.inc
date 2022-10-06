@@ -3,6 +3,7 @@
     $lang['date']     = 'Aangemaakt';
     $lang['time']     = 'Tijd';
     $lang['due']      = 'Vervaldatum';
+    $lang['payment']  = 'Betaaldatum';
     $lang['to']       = 'Begunstigde';
     $lang['from']     = 'Onze gegevens';
     $lang['product']  = 'Product';

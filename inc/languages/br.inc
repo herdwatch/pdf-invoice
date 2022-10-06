@@ -4,6 +4,7 @@
     $lang['date']     = 'Data de cobrança';
     $lang['time']     = 'Tempo de cobrança';
     $lang['due']      = 'Data de Vencimento';
+    $lang['payment']  = 'Data de pagamento';
     $lang['to']       = 'Faturamento para';
     $lang['from']     = 'Faturamento de';
     $lang['product']  = 'Produto';

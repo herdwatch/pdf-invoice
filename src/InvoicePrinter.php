@@ -54,6 +54,7 @@ class InvoicePrinter extends FPDF
     public string $date = '';
     public string $time = '';
     public string $due = '';
+    public string $paymentDate = '';
     public array $from = [''];
     public array $to = [''];
     public array $items = [];
@@ -68,6 +69,7 @@ class InvoicePrinter extends FPDF
 
     protected string $title = '';
     protected bool $displayToFromHeaders = true;
+    public int $fromToBoldLineNumber = 0;
     protected int $columns = 2;
     protected array $maxImageDimensions = [230, 130];
     protected bool $flipFlop = false;
@@ -209,6 +211,11 @@ class InvoicePrinter extends FPDF
         $this->due = $date;
     }
 
+    public function setPaymentDate(string $paymentDate): void
+    {
+        $this->paymentDate = $paymentDate;
+    }
+
     public function setLogo(string $logo = '', int $maxWidth = 0, int $maxHeight = 0): void
     {
         if ($maxWidth && $maxHeight) {
@@ -236,6 +243,11 @@ class InvoicePrinter extends FPDF
     public function setTo(array $data): void
     {
         $this->to = $data;
+    }
+
+    public function setFromToBoldLineNumber(int $fromToBoldLineNumber): void
+    {
+        $this->fromToBoldLineNumber = $fromToBoldLineNumber;
     }
 
     public function setReference(string $reference): void
@@ -423,6 +435,7 @@ class InvoicePrinter extends FPDF
             - max(
                 $this->GetStringWidth(mb_strtoupper($this->lang['number'], self::ICONV_CHARSET_INPUT)),
                 $this->GetStringWidth(mb_strtoupper($this->lang['date'], self::ICONV_CHARSET_INPUT)),
+                $this->GetStringWidth(mb_strtoupper($this->lang['payment'], self::ICONV_CHARSET_INPUT)),
                 $this->GetStringWidth(mb_strtoupper($this->lang['due'], self::ICONV_CHARSET_INPUT))
             )
             - max(
@@ -436,6 +449,8 @@ class InvoicePrinter extends FPDF
         $this->printDate($positionX, $lineHeight);
         //Time
         $this->printTime($positionX, $lineHeight);
+        //Payment date
+        $this->printPaymentDate($positionX, $lineHeight);
         //Due date
         $this->printDueDate($positionX, $lineHeight);
         //Custom Headers
@@ -840,6 +855,21 @@ class InvoicePrinter extends FPDF
         }
     }
 
+    public function printPaymentDate(int $positionX, int $lineHeight): void
+    {
+        if (!empty($this->paymentDate)) {
+            $this->Cell($positionX, $lineHeight);
+            $this->SetFont($this->font, 'B', 9);
+            $this->SetTextColor($this->color[0], $this->color[1], $this->color[2]);
+            $this->Cell(32, $lineHeight, iconv(self::ICONV_CHARSET_INPUT, self::ICONV_CHARSET_OUTPUT_A,
+                    mb_strtoupper($this->lang['payment'], self::ICONV_CHARSET_INPUT)) . ':', 0, 0,
+                'L');
+            $this->SetTextColor(50, 50, 50);
+            $this->SetFont($this->font, '', 9);
+            $this->Cell(0, $lineHeight, $this->paymentDate, 0, 1, 'R');
+        }
+    }
+
     /**
      * @param int $positionX
      * @param int $lineHeight
@@ -1092,25 +1122,27 @@ class InvoicePrinter extends FPDF
             $this->doDisplayToFromHeaders($width, $lineHeight);
 
             //Information
-            $this->Ln(5);
-            $this->SetTextColor(50, 50, 50);
-            $this->SetFont($this->font, 'B', 10);
-            $this->Cell($width, $lineHeight,
-                iconv(self::ICONV_CHARSET_INPUT, self::ICONV_CHARSET_OUTPUT_A, $this->from[0] ?? 0), 0, 0, 'L');
-            $this->Cell(0, $lineHeight,
-                iconv(self::ICONV_CHARSET_INPUT, self::ICONV_CHARSET_OUTPUT_A, $this->to[0] ?? 0), 0, 0, 'L');
             $this->SetFont($this->font, '', 8);
             $this->SetTextColor(100, 100, 100);
-            $this->Ln(7);
             $countFrom = $this->from === null ? 0 : count($this->from);
             $countTo = $this->to === null ? 0 : count($this->to);
             $iMax = max($countFrom, $countTo);
-            for ($i = 1; $i < $iMax; $i++) {
+            for ($i = 0; $i < $iMax; $i++) {
+                if ($i === $this->fromToBoldLineNumber) {
+                    $this->SetTextColor(50, 50, 50);
+                    $this->SetFont($this->font, 'B', 10);
+                }
                 // avoid undefined error if TO and FROM array lengths are different
                 $isEmptyFrom = empty($this->from[$i]);
                 $isEmptyTo = empty($this->to[$i]);
                 $this->printLineDisplayToFrom($isEmptyFrom, $isEmptyTo, $i, $width, $lineHeight);
-                $this->Ln(5);
+                if ($i === $this->fromToBoldLineNumber) {
+                    $this->SetFont($this->font, '', 8);
+                    $this->SetTextColor(100, 100, 100);
+                    $this->Ln(7);
+                } else {
+                    $this->Ln(5);
+                }
             }
             $this->Ln(-6);
             $this->Ln(5);

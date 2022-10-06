@@ -3,6 +3,7 @@
     $lang['date']     = 'Fatura tarihi';
     $lang['time']     = 'Fatura zamanı';
     $lang['due']      = 'Vadesi';
+    $lang['payment']  = 'Ödeme tarihi';
     $lang['to']       = 'Firma';
     $lang['from']     = 'Müşteri';
     $lang['product']  = 'Ürün';

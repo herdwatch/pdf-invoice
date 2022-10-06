@@ -3,6 +3,7 @@
     $lang['date']     = 'Data';
     $lang['time']     = 'Laikas';
     $lang['due']      = 'Sumokėti iki';
+    $lang['payment']  = 'Mokėjimo diena';
     $lang['to']       = 'Pirkėjas';
     $lang['from']     = 'Pardavėjas';
     $lang['product']  = 'Prekės';

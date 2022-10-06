@@ -3,6 +3,7 @@
     $lang['date']     = 'Data facturii';
     $lang['time']     = 'Ora facturii';
     $lang['due']      = 'Data scadenței';
+    $lang['payment']  = 'Data de plată';
     $lang['to']       = 'Client';
     $lang['from']     = 'Furnizor';
     $lang['product']  = 'Produs';
