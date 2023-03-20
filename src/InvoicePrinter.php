@@ -22,8 +22,8 @@ use FPDF;
 class InvoicePrinter extends FPDF
 {
     public const ICONV_CHARSET_INPUT    = 'UTF-8';
-    public const ICONV_CHARSET_OUTPUT_A = 'ISO-8859-1//TRANSLIT';
-    public const ICONV_CHARSET_OUTPUT_B = 'windows-1252//TRANSLIT';
+    public const ICONV_CHARSET_OUTPUT_A = 'ISO-8859-1//TRANSLIT//IGNORE';
+    public const ICONV_CHARSET_OUTPUT_B = 'windows-1252//TRANSLIT//IGNORE';
     public const        ALIGNMENT_RIGHT = 'right';
     public const        ALIGNMENT_LEFT = 'left';
     public const SIZE_A4               = 'A4';
