@@ -388,6 +388,17 @@ class InvoicePrinter extends FPDF
         $this->addText[] = ['paragraph', $paragraph];
     }
 
+    public function addBoldParagraph(string $paragraph): void
+    {
+        $paragraph = $this->br2nl($paragraph);
+        $this->addText[] = ['bold_paragraph', $paragraph];
+    }
+
+    public function addBoldBlueLink(string $link): void
+    {
+        $this->addText[] = ['link', $link];
+    }
+
     public function addBadge(string $badge, bool $color = false): void
     {
         $this->badge = $badge;
@@ -493,7 +504,6 @@ class InvoicePrinter extends FPDF
         $this->addTotals($bgColor, $cellHeight, $widthQuantity, $width_other);
         $this->productsEnded = true;
         $this->Ln();
-        $this->Ln(3);
 
         //Badge
         $this->badge($badgeX, $badgeY);
@@ -717,14 +727,44 @@ class InvoicePrinter extends FPDF
                     $this->document['w'] - $this->margins['r'],
                     $this->GetY()
                 );
-                $this->Ln(4);
+                $this->Ln(2);
             }
             if ($text[0] === 'paragraph') {
                 $this->SetTextColor(80, 80, 80);
                 $this->SetFont($this->font, '', 8);
-                $this->MultiCell(0, 4, iconv(self::ICONV_CHARSET_INPUT, self::ICONV_CHARSET_OUTPUT_A, $text[1]), 0, 'L',
-                    0);
-                $this->Ln(4);
+                $this->MultiCell(
+                    0,
+                    4,
+                    iconv(self::ICONV_CHARSET_INPUT, self::ICONV_CHARSET_OUTPUT_A, $text[1]),
+                    0,
+                    'L',
+                    0
+                );
+                $this->Ln(2);
+            }
+            if ($text[0] === 'bold_paragraph') {
+                $this->SetFont($this->font, 'b', 8);
+                $this->SetTextColor(50, 50, 50);
+                $this->MultiCell(
+                    0,
+                    4,
+                    iconv(self::ICONV_CHARSET_INPUT, self::ICONV_CHARSET_OUTPUT_A, $text[1]),
+                    0,
+                    'L',
+                    0
+                );
+            }
+            if ($text[0] === 'link') {
+                $this->SetFont($this->font, 'b', 8);
+                $this->SetTextColor($this->color[0], $this->color[1], $this->color[2]);
+                $this->MultiCell(
+                    0,
+                    4,
+                    iconv(self::ICONV_CHARSET_INPUT, self::ICONV_CHARSET_OUTPUT_A, $text[1]),
+                    0,
+                    'L',
+                    0
+                );
             }
         }
     }
@@ -988,9 +1028,8 @@ class InvoicePrinter extends FPDF
             if (($this->margins['t'] + $tmpDimensions) > $this->GetY()) {
                 $this->SetY($this->margins['t'] + $tmpDimensions + 5);
             } else {
-                $this->SetY($this->GetY() + 10);
+                $this->SetY($this->GetY());
             }
-            $this->Ln(5);
             $this->SetFillColor($this->color[0], $this->color[1], $this->color[2]);
             $this->SetTextColor($this->color[0], $this->color[1], $this->color[2]);
 
