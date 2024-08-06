@@ -377,26 +377,34 @@ class InvoicePrinter extends FPDF
         $this->totals[] = $t;
     }
 
-    public function addTitle(string $title): void
-    {
-        $this->addText[] = ['title', $title];
+    public function addTitle(
+        string $title,
+        string $toEncoding = self::ICONV_CHARSET_OUTPUT_A
+    ): void {
+        $this->addText[] = ['title', $title, $toEncoding];
     }
 
-    public function addParagraph(string $paragraph): void
-    {
+    public function addParagraph(
+        string $paragraph,
+        string $toEncoding = self::ICONV_CHARSET_OUTPUT_A
+    ): void {
         $paragraph = $this->br2nl($paragraph);
-        $this->addText[] = ['paragraph', $paragraph];
+        $this->addText[] = ['paragraph', $paragraph, $toEncoding];
     }
 
-    public function addBoldParagraph(string $paragraph): void
-    {
+    public function addBoldParagraph(
+        string $paragraph,
+        string $toEncoding = self::ICONV_CHARSET_OUTPUT_A
+    ): void {
         $paragraph = $this->br2nl($paragraph);
-        $this->addText[] = ['bold_paragraph', $paragraph];
+        $this->addText[] = ['bold_paragraph', $paragraph, $toEncoding];
     }
 
-    public function addBoldBlueLink(string $link): void
-    {
-        $this->addText[] = ['link', $link];
+    public function addBoldBlueLink(
+        string $link,
+        string $toEncoding = self::ICONV_CHARSET_OUTPUT_A
+    ): void {
+        $this->addText[] = ['link', $link, $toEncoding];
     }
 
     public function addBadge(string $badge, bool $color = false): void
@@ -716,7 +724,7 @@ class InvoicePrinter extends FPDF
             if ($text[0] === 'title') {
                 $this->SetFont($this->font, 'b', 9);
                 $this->SetTextColor(50, 50, 50);
-                $this->Cell(0, 10, iconv(self::ICONV_CHARSET_INPUT, self::ICONV_CHARSET_OUTPUT_A,
+                $this->Cell(0, 10, iconv(self::ICONV_CHARSET_INPUT, $text[2],
                     mb_strtoupper($text[1], self::ICONV_CHARSET_INPUT)), 0, 0, 'L', 0);
                 $this->Ln();
                 $this->SetLineWidth(0.3);
@@ -735,7 +743,7 @@ class InvoicePrinter extends FPDF
                 $this->MultiCell(
                     0,
                     4,
-                    iconv(self::ICONV_CHARSET_INPUT, self::ICONV_CHARSET_OUTPUT_A, $text[1]),
+                    iconv(self::ICONV_CHARSET_INPUT, $text[2], $text[1]),
                     0,
                     'L',
                     0
@@ -748,7 +756,7 @@ class InvoicePrinter extends FPDF
                 $this->MultiCell(
                     0,
                     4,
-                    iconv(self::ICONV_CHARSET_INPUT, self::ICONV_CHARSET_OUTPUT_A, $text[1]),
+                    iconv(self::ICONV_CHARSET_INPUT, $text[2], $text[1]),
                     0,
                     'L',
                     0
@@ -760,7 +768,7 @@ class InvoicePrinter extends FPDF
                 $this->MultiCell(
                     0,
                     4,
-                    iconv(self::ICONV_CHARSET_INPUT, self::ICONV_CHARSET_OUTPUT_A, $text[1]),
+                    iconv(self::ICONV_CHARSET_INPUT, $text[2], $text[1]),
                     0,
                     'L',
                     0
