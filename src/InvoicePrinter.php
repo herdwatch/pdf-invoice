@@ -179,6 +179,11 @@ class InvoicePrinter extends FPDF
         return $d !== null;
     }
 
+    public function setVatField(bool $vatField): void
+    {
+        $this->vatField = $vatField;
+    }
+
     public function setTimeZone(string $zone = ''): void
     {
         if (!empty($zone) && $this->isValidTimezoneId($zone) === true) {
