@@ -3,50 +3,45 @@
 namespace Herdwatch\PdfInvoice;
 
 use Herdwatch\PdfInvoice\Data\AbstractInvoiceItem;
+use Herdwatch\PdfInvoice\Data\Badge;
 use Herdwatch\PdfInvoice\Data\CustomHeaderItem;
 use Herdwatch\PdfInvoice\Data\InvoiceItem;
 use Herdwatch\PdfInvoice\Data\TotalItem;
 
 abstract class AbstractDocumentPrinter extends ExtendedFPDF
 {
-    public string $reference = '';
-    public string $date = '';
-    public string $time = '';
+    public bool $displayToFrom = true;
+    public int $fromToBoldLineNumber = 0;
+    protected string $reference = '';
+    protected string $date = '';
+    protected string $time = '';
 
     /**
      * @var string[]
      */
-    public array $from = [''];
+    protected array $from = [''];
 
     /**
      * @var string[]
      */
-    public array $to = [''];
+    protected array $to = [''];
 
     /**
      * @var AbstractInvoiceItem[]
      */
-    public array $items = [];
+    protected array $items = [];
 
     /**
      * @var TotalItem[]
      */
-    public array $totals = [];
+    protected array $totals = [];
 
     /**
      * @var CustomHeaderItem[]
      */
-    public array $customHeaders = [];
+    protected array $customHeaders = [];
 
-    public bool $displayToFrom = true;
-    public int $fromToBoldLineNumber = 0;
-
-    /**
-     * @var int[]
-     */
-    public array $badgeColor = [];
-
-    public string $badge = '';
+    protected ?Badge $badgeData = null;
     protected int $columns = 2;
     protected bool $vatField = false;
     protected bool $priceField = false;
@@ -76,13 +71,15 @@ abstract class AbstractDocumentPrinter extends ExtendedFPDF
 
     public function addBadge(string $badge, ?string $color = null): void
     {
-        $this->badge = $badge;
+        $colorObject = $this->colorData;
 
         if (!empty($color)) {
-            $this->badgeColor = $this->utilsService->hex2rgb($color);
-        } else {
-            $this->badgeColor = $this->color;
+            $colorObject = $this->utilsService->hex2color($color);
         }
+        $this->badgeData = new Badge(
+            $badge,
+            $colorObject
+        );
     }
 
     public function setLogo(string $logo = '', int $maxWidth = 0, int $maxHeight = 0): void
@@ -274,6 +271,9 @@ abstract class AbstractDocumentPrinter extends ExtendedFPDF
         }
     }
 
+    /**
+     * @throws PDFInvoiceException
+     */
     protected function printFirstPage(int $lineHeight): void
     {
         if (1 === $this->PageNo()) {
@@ -283,10 +283,9 @@ abstract class AbstractDocumentPrinter extends ExtendedFPDF
             } else {
                 $this->SetY($this->GetY());
             }
-            $this->SetFillColor($this->color[0], $this->color[1], $this->color[2]);
-            $this->SetTextColor($this->color[0], $this->color[1], $this->color[2]);
-
-            $this->SetDrawColor($this->color[0], $this->color[1], $this->color[2]);
+            $this->colorService->setFillColorData($this->colorData);
+            $this->colorService->setTextColorData($this->colorData);
+            $this->colorService->setDrawColorData($this->colorData);
             $this->SetFont($this->font, 'B', 10);
             $width = ($this->document['w'] - $this->margins['l'] - $this->margins['r']) / 2;
 
@@ -417,7 +416,7 @@ abstract class AbstractDocumentPrinter extends ExtendedFPDF
     {
         $this->Ln();
         $this->SetLineWidth(0.3);
-        $this->SetDrawColor($this->color[0], $this->color[1], $this->color[2]);
+        $this->colorService->setDrawColorData($this->colorData);
         $this->Line($this->margins['l'], $this->GetY(), $this->document['w'] - $this->margins['r'], $this->GetY());
         $this->Ln(2);
     }
@@ -462,7 +461,7 @@ abstract class AbstractDocumentPrinter extends ExtendedFPDF
             1
         );
         $cHeight = $this->printDescription($item->getDescription(), $x, $cHeight);
-        $this->SetTextColor(50, 50, 50);
+        $this->colorService->setTextColorData(Data\Color::createGrey());
         $this->SetFont($this->font, '', 8);
         $this->Cell($this->columnSpacing, $cHeight, '', 0, 0, 'L', 0);
         $this->Cell($widthQuantity, $cHeight, $item->getQuantity(), 0, 0, 'C', 1);
@@ -527,6 +526,36 @@ abstract class AbstractDocumentPrinter extends ExtendedFPDF
             );
         } else {
             $this->Cell($width_other, $cHeight, '', 0, 0, 'C', 1);
+        }
+    }
+
+    /**
+     * @throws PDFInvoiceException
+     */
+    protected function badge(float $badgeX, float $badgeY): void
+    {
+        if (null === $this->badgeData) {
+            return;
+        }
+        $tmpBadge = ' ' . mb_strtoupper($this->badgeData->getBadge(), self::ICONV_CHARSET_INPUT) . ' ';
+        $resetX = $this->GetX();
+        $resetY = $this->GetY();
+        $this->SetXY($badgeX, $badgeY + 15);
+        $this->SetLineWidth(0.4);
+        $this->colorService->setTextColorData($this->badgeData->getBadgeColor());
+        $this->colorService->setDrawColorData($this->badgeData->getBadgeColor());
+        $this->SetFont($this->font, 'b', 15);
+        $this->Rotate(10, $this->GetX(), $this->GetY());
+        $this->Rect($this->GetX(), $this->GetY(), $this->GetStringWidth($tmpBadge) + 2, 10);
+        $this->Write(
+            10,
+            $this->changeCharset($tmpBadge, true)
+        );
+        $this->Rotate(0);
+        if ($resetY > $this->GetY() + 20) {
+            $this->SetXY($resetX, $resetY);
+        } else {
+            $this->Ln(18);
         }
     }
 

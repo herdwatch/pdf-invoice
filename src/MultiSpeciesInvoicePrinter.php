@@ -186,14 +186,10 @@ class MultiSpeciesInvoicePrinter extends InvoicePrinter
         if (!$specialTotal->isColored()) {
             return;
         }
-        $tempBgColor = $specialTotal->getBgColor() ?? new Color(
-            $this->color[0],
-            $this->color[1],
-            $this->color[2],
-        );
-        $tempTextColor = $specialTotal->getTextColor() ?? new Color(255, 255, 255);
-        $this->setTextColorData($tempTextColor);
-        $this->setFillColorData($tempBgColor);
+        $tempBgColor = $specialTotal->getBgColor() ?? $this->colorData;
+        $tempTextColor = $specialTotal->getTextColor() ?? Color::createWhite();
+        $this->colorService->setTextColorData($tempTextColor);
+        $this->colorService->setFillColorData($tempBgColor);
     }
 
     /**
@@ -206,7 +202,7 @@ class MultiSpeciesInvoicePrinter extends InvoicePrinter
         }
         $this->Cell($positionX, $lineHeight);
         $this->SetFont($this->font, 'B', 9);
-        $this->SetTextColor($this->color[0], $this->color[1], $this->color[2]);
+        $this->colorService->setTextColorData($this->colorData);
         $this->Cell(
             32,
             $lineHeight,

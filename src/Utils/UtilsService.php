@@ -2,6 +2,8 @@
 
 namespace Herdwatch\PdfInvoice\Utils;
 
+use Herdwatch\PdfInvoice\Data\Color;
+
 class UtilsService
 {
     public function br2nl(string $string): string
@@ -12,7 +14,7 @@ class UtilsService
     /**
      * @return int[]
      */
-    public function hex2rgb(string $hex): array
+    public function hex2rgbArray(string $hex): array
     {
         $hex = str_replace('#', '', $hex);
         if (3 === strlen($hex)) {
@@ -26,6 +28,11 @@ class UtilsService
         }
 
         return [$r, $g, $b];
+    }
+
+    public function hex2color(string $hex): Color
+    {
+        return new Color(...$this->hex2rgbArray($hex));
     }
 
     public function pixelsToMM(float $val): float

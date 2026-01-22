@@ -16,6 +16,7 @@ namespace Herdwatch\PdfInvoice;
 
 /* fork from konekt/pdf-invoice bundle */
 
+use Herdwatch\PdfInvoice\Data\Color;
 use Herdwatch\PdfInvoice\Data\InvoiceItem;
 use Herdwatch\PdfInvoice\Data\TextLinkItem;
 
@@ -229,9 +230,9 @@ class InvoicePrinter extends AbstractDocumentPrinter
         $totalsCount = count($this->totals);
         $cellWidth = ($this->document['w'] - $this->margins['l'] - $this->margins['r']) / $totalsCount;
         // Colors, line width and bold font
-        $this->SetFillColor($this->color[0], $this->color[1], $this->color[2]);
+        $this->colorService->setFillColorData($this->colorData);
         $this->SetTextColor(255, 255, 255);
-        $this->SetDrawColor($this->color[0], $this->color[1], $this->color[2]);
+        $this->colorService->setDrawColorData($this->colorData);
         $this->SetLineWidth(.3);
         $this->SetFont($this->font, 'b', 8);
         // Header
@@ -272,7 +273,7 @@ class InvoicePrinter extends AbstractDocumentPrinter
     protected function addTotalsVertical(int $bgColor, int $cellHeight, int $widthQuantity, int $width_other): void
     {
         foreach ($this->totals as $total) {
-            $this->SetTextColor(50, 50, 50);
+            $this->colorService->setTextColorData(Color::createGrey());
             $this->SetFillColor($bgColor, $bgColor, $bgColor);
             $this->Cell(1 + $this->firstColumnWidth, $cellHeight, '', 0, 0, 'L', 0);
             $this->Cell($widthQuantity, $cellHeight, '', 0, 0, 'L', 0);
@@ -283,8 +284,8 @@ class InvoicePrinter extends AbstractDocumentPrinter
             }
             $this->Cell($this->columnSpacing, $cellHeight, '', 0, 0, 'L', 0);
             if ($total->isColored()) {
-                $this->SetTextColor(255, 255, 255);
-                $this->SetFillColor($this->color[0], $this->color[1], $this->color[2]);
+                $this->colorService->setTextColorData(Color::createWhite());
+                $this->colorService->setFillColorData($this->colorData);
             }
             $this->SetFont($this->font, 'b', 8);
             $this->Cell(1, $cellHeight, '', 0, 0, 'L', 1);
@@ -301,8 +302,8 @@ class InvoicePrinter extends AbstractDocumentPrinter
             $this->SetFont($this->font, 'b', 8);
             $this->SetFillColor($bgColor, $bgColor, $bgColor);
             if ($total->isColored()) {
-                $this->SetTextColor(255, 255, 255);
-                $this->SetFillColor($this->color[0], $this->color[1], $this->color[2]);
+                $this->colorService->setTextColorData(Color::createWhite());
+                $this->colorService->setFillColorData($this->colorData);
             }
             $this->Cell(
                 $width_other,
@@ -332,7 +333,7 @@ class InvoicePrinter extends AbstractDocumentPrinter
         }
         $this->Cell($positionX, $lineHeight);
         $this->SetFont($this->font, 'B', 9);
-        $this->SetTextColor($this->color[0], $this->color[1], $this->color[2]);
+        $this->colorService->setTextColorData($this->colorData);
         $this->Cell(
             32,
             $lineHeight,
@@ -429,36 +430,6 @@ class InvoicePrinter extends AbstractDocumentPrinter
     /**
      * @throws PDFInvoiceException
      */
-    protected function badge(float $badgeX, float $badgeY): void
-    {
-        if (empty($this->badge)) {
-            return;
-        }
-        $tmpBadge = ' ' . mb_strtoupper($this->badge, self::ICONV_CHARSET_INPUT) . ' ';
-        $resetX = $this->GetX();
-        $resetY = $this->GetY();
-        $this->SetXY($badgeX, $badgeY + 15);
-        $this->SetLineWidth(0.4);
-        $this->SetDrawColor($this->badgeColor[0], $this->badgeColor[1], $this->badgeColor[2]);
-        $this->SetTextColor($this->badgeColor[0], $this->badgeColor[1], $this->badgeColor[2]);
-        $this->SetFont($this->font, 'b', 15);
-        $this->Rotate(10, $this->GetX(), $this->GetY());
-        $this->Rect($this->GetX(), $this->GetY(), $this->GetStringWidth($tmpBadge) + 2, 10);
-        $this->Write(
-            10,
-            $this->changeCharset($tmpBadge, true)
-        );
-        $this->Rotate(0);
-        if ($resetY > $this->GetY() + 20) {
-            $this->SetXY($resetX, $resetY);
-        } else {
-            $this->Ln(18);
-        }
-    }
-
-    /**
-     * @throws PDFInvoiceException
-     */
     protected function addInformation(): void
     {
         foreach ($this->addText as $text) {
@@ -503,7 +474,7 @@ class InvoicePrinter extends AbstractDocumentPrinter
             }
             if ('link' === $text->getType()) {
                 $this->SetFont($this->font, 'b', 8);
-                $this->SetTextColor($this->color[0], $this->color[1], $this->color[2]);
+                $this->colorService->setTextColorData($this->colorData);
                 $this->MultiCell(
                     0,
                     4,

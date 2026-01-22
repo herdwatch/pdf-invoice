@@ -2,8 +2,8 @@
 
 namespace Herdwatch\PdfInvoice;
 
-use FPDF;
 use Herdwatch\PdfInvoice\Data\Color;
+use Herdwatch\PdfInvoice\Services\ColorService;
 use Herdwatch\PdfInvoice\Utils\InvoiceNbLines;
 use Herdwatch\PdfInvoice\Utils\LangLoader;
 use Herdwatch\PdfInvoice\Utils\TimezoneService;
@@ -27,11 +27,7 @@ class ExtendedFPDF extends \FPDF
      */
     public array $document = [];
 
-    /**
-     * @var int[]
-     */
-    public array $color = [];
-
+    public Color $colorData;
     public int $angle = 0;
     public string $font = 'helvetica';                 /* Font Name : See inc/fpdf/font for all supported fonts */
     public float $columnOpacity = 0.06;               /* Items table background color opacity. Range (0.00 - 1) */
@@ -62,6 +58,7 @@ class ExtendedFPDF extends \FPDF
 
     protected TimezoneService $timezoneService;
     protected UtilsService $utilsService;
+    protected ColorService $colorService;
 
     final public function __construct(
         string $size = self::SIZE_A4,
@@ -70,9 +67,14 @@ class ExtendedFPDF extends \FPDF
     ) {
         $this->timezoneService = new TimezoneService();
         $this->utilsService = new UtilsService();
+        $this->colorService = new ColorService(
+            $this
+        );
         $this->setLanguage($language);
         $this->setDocumentSize($size);
         $this->setColor('#222222');
+
+        $this->colorData = $this->utilsService->hex2color('#222222');
 
         $this->recalculateColumns();
 
@@ -84,7 +86,7 @@ class ExtendedFPDF extends \FPDF
 
     public function setColor(string $rgbColor): void
     {
-        $this->color = $this->utilsService->hex2rgb($rgbColor);
+        $this->colorData = $this->utilsService->hex2color($rgbColor);
     }
 
     public function setTimeZone(string $zone = ''): void
@@ -189,16 +191,6 @@ class ExtendedFPDF extends \FPDF
     public function setFontSizeProductDescription(int $data): void
     {
         $this->fontSizeProductDescription = $data;
-    }
-
-    public function setTextColorData(Color $color): void
-    {
-        $this->SetTextColor($color->getR(), $color->getG(), $color->getB());
-    }
-
-    public function setFillColorData(Color $color): void
-    {
-        $this->SetFillColor($color->getR(), $color->getG(), $color->getB());
     }
 
     protected function setLanguage(string $language): void

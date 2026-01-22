@@ -25,4 +25,14 @@ readonly class Color
     {
         return $this->b;
     }
+
+    public static function createWhite(): self
+    {
+        return new self(255, 255, 255);
+    }
+
+    public static function createGrey(): self
+    {
+        return new self(50, 50, 50);
+    }
 }
