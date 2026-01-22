@@ -63,7 +63,7 @@ class ExtendedFPDF extends \FPDF
     protected TimezoneService $timezoneService;
     protected UtilsService $utilsService;
 
-    public function __construct(
+    final public function __construct(
         string $size = self::SIZE_A4,
         protected string $currency = '$',
         protected string $language = 'en',
@@ -82,9 +82,9 @@ class ExtendedFPDF extends \FPDF
         $this->SetMargins($this->margins['l'], $this->margins['t'], $this->margins['r']);
     }
 
-    public function setColor(string $rgbcolor): void
+    public function setColor(string $rgbColor): void
     {
-        $this->color = $this->utilsService->hex2rgb($rgbcolor);
+        $this->color = $this->utilsService->hex2rgb($rgbColor);
     }
 
     public function setTimeZone(string $zone = ''): void

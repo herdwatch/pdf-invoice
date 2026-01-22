@@ -16,8 +16,8 @@ namespace Herdwatch\PdfInvoice;
 
 /* fork from konekt/pdf-invoice bundle */
 
-use Herdwatch\PdfInvoice\Data\AbstractInvoiceItem;
 use Herdwatch\PdfInvoice\Data\InvoiceItem;
+use Herdwatch\PdfInvoice\Data\TextLinkItem;
 
 /**
  * @phpstan-param InvoiceItem[] $items
@@ -29,7 +29,7 @@ class InvoicePrinter extends AbstractDocumentPrinter
     public string $totalsAlignment = self::TOTAL_ALIGNMENT_VERTICAL;
 
     /**
-     * @var array<int, string[]>
+     * @var TextLinkItem[]
      */
     public array $addText = [];
 
@@ -99,30 +99,44 @@ class InvoicePrinter extends AbstractDocumentPrinter
         string $title,
         string $toEncoding = self::ICONV_CHARSET_OUTPUT_A,
     ): void {
-        $this->addText[] = ['title', $title, $toEncoding];
+        $this->addText[] = new TextLinkItem(
+            'title',
+            $title,
+            $toEncoding
+        );
     }
 
     public function addParagraph(
         string $paragraph,
         string $toEncoding = self::ICONV_CHARSET_OUTPUT_A,
     ): void {
-        $paragraph = $this->utilsService->br2nl($paragraph);
-        $this->addText[] = ['paragraph', $paragraph, $toEncoding];
+        $this->addText[] = new TextLinkItem(
+            'paragraph',
+            $this->utilsService->br2nl($paragraph),
+            $toEncoding
+        );
     }
 
     public function addBoldParagraph(
         string $paragraph,
         string $toEncoding = self::ICONV_CHARSET_OUTPUT_A,
     ): void {
-        $paragraph = $this->utilsService->br2nl($paragraph);
-        $this->addText[] = ['bold_paragraph', $paragraph, $toEncoding];
+        $this->addText[] = new TextLinkItem(
+            'bold_paragraph',
+            $this->utilsService->br2nl($paragraph),
+            $toEncoding
+        );
     }
 
     public function addBoldBlueLink(
         string $link,
         string $toEncoding = self::ICONV_CHARSET_OUTPUT_A,
     ): void {
-        $this->addText[] = ['link', $link, $toEncoding];
+        $this->addText[] = new TextLinkItem(
+            'link',
+            $link,
+            $toEncoding
+        );
     }
 
     public function setFooterNote(string $note): void
@@ -209,24 +223,127 @@ class InvoicePrinter extends AbstractDocumentPrinter
     /**
      * @throws PDFInvoiceException
      */
-    public function printPaymentDate(int $positionX, int $lineHeight): void
+    protected function addTotalsHorizontal(int $bgColor): void
     {
-        if (!empty($this->paymentDate)) {
-            $this->Cell($positionX, $lineHeight);
-            $this->SetFont($this->font, 'B', 9);
-            $this->SetTextColor($this->color[0], $this->color[1], $this->color[2]);
+        $this->Ln(2);
+        $totalsCount = count($this->totals);
+        $cellWidth = ($this->document['w'] - $this->margins['l'] - $this->margins['r']) / $totalsCount;
+        // Colors, line width and bold font
+        $this->SetFillColor($this->color[0], $this->color[1], $this->color[2]);
+        $this->SetTextColor(255, 255, 255);
+        $this->SetDrawColor($this->color[0], $this->color[1], $this->color[2]);
+        $this->SetLineWidth(.3);
+        $this->SetFont($this->font, 'b', 8);
+        // Header
+        foreach ($this->totals as $i => $totalData) {
             $this->Cell(
-                32,
-                $lineHeight,
-                $this->changeCharset($this->lang['payment'], true) . ':',
+                0 == $totalsCount % 2 ? (0 == $i % 2 ? $cellWidth + 5 : $cellWidth - 5) : $cellWidth,
+                7,
+                $this->changeCharset($totalData->getName()),
+                1,
                 0,
-                0,
-                'L'
+                'C',
+                true
             );
-            $this->SetTextColor(50, 50, 50);
-            $this->SetFont($this->font, '', 9);
-            $this->Cell(0, $lineHeight, $this->paymentDate, 0, 1, 'R');
         }
+        $this->Ln();
+        // Values
+        $this->SetTextColor(50, 50, 50);
+        $this->SetFont($this->font, 'b', 8);
+        $this->SetFillColor($bgColor, $bgColor, $bgColor);
+        foreach ($this->totals as $y => $yValue) {
+            $totalData = $yValue;
+            $this->Cell(
+                0 == $totalsCount % 2 ? (0 == $y % 2 ? $cellWidth + 5 : $cellWidth - 5) : $cellWidth,
+                6,
+                $this->changeCharset($totalData->getValue()),
+                'LRB',
+                0,
+                'C',
+                $totalData->isColored()
+            );
+        }
+        $this->Ln();
+    }
+
+    /**
+     * @throws PDFInvoiceException
+     */
+    protected function addTotalsVertical(int $bgColor, int $cellHeight, int $widthQuantity, int $width_other): void
+    {
+        foreach ($this->totals as $total) {
+            $this->SetTextColor(50, 50, 50);
+            $this->SetFillColor($bgColor, $bgColor, $bgColor);
+            $this->Cell(1 + $this->firstColumnWidth, $cellHeight, '', 0, 0, 'L', 0);
+            $this->Cell($widthQuantity, $cellHeight, '', 0, 0, 'L', 0);
+            $this->Cell($this->columnSpacing, $cellHeight, '', 0, 0, 'L', 0);
+            for ($i = 0; $i < $this->columns - 4; ++$i) {
+                $this->Cell($width_other, $cellHeight, '', 0, 0, 'L', 0);
+                $this->Cell($this->columnSpacing, $cellHeight, '', 0, 0, 'L', 0);
+            }
+            $this->Cell($this->columnSpacing, $cellHeight, '', 0, 0, 'L', 0);
+            if ($total->isColored()) {
+                $this->SetTextColor(255, 255, 255);
+                $this->SetFillColor($this->color[0], $this->color[1], $this->color[2]);
+            }
+            $this->SetFont($this->font, 'b', 8);
+            $this->Cell(1, $cellHeight, '', 0, 0, 'L', 1);
+            $this->Cell(
+                $width_other - 1,
+                $cellHeight,
+                $this->changeCharset($total->getName()),
+                0,
+                0,
+                'L',
+                1
+            );
+            $this->Cell($this->columnSpacing, $cellHeight, '', 0, 0, 'L', 0);
+            $this->SetFont($this->font, 'b', 8);
+            $this->SetFillColor($bgColor, $bgColor, $bgColor);
+            if ($total->isColored()) {
+                $this->SetTextColor(255, 255, 255);
+                $this->SetFillColor($this->color[0], $this->color[1], $this->color[2]);
+            }
+            $this->Cell(
+                $width_other,
+                $cellHeight,
+                $this->changeCharset($total->getValue()),
+                0,
+                0,
+                'C',
+                1
+            );
+            $this->Ln();
+            $this->Ln($this->columnSpacing);
+        }
+    }
+
+    /**
+     * @throws PDFInvoiceException
+     */
+    protected function printHeaderItem(
+        string $name,
+        string $translation,
+        float $positionX,
+        float $lineHeight,
+    ): void {
+        if (empty($name)) {
+            return;
+        }
+        $this->Cell($positionX, $lineHeight);
+        $this->SetFont($this->font, 'B', 9);
+        $this->SetTextColor($this->color[0], $this->color[1], $this->color[2]);
+        $this->Cell(
+            32,
+            $lineHeight,
+            $this->changeCharset($translation, true) . ':',
+            0,
+            0,
+            'L'
+        );
+        $this->SetTextColor(50, 50, 50);
+        $this->SetFont($this->font, '', 9);
+        $this->Cell(0, $lineHeight, $name, 0, 1, 'R');
     }
 
     /**
@@ -250,15 +367,40 @@ class InvoicePrinter extends AbstractDocumentPrinter
             );
 
         // Number
-        $this->printReference($positionX, $lineHeight);
+        $this->printHeaderItem(
+            $this->reference,
+            $this->lang['number'],
+            $positionX,
+            $lineHeight
+        );
         // Date
-        $this->printDate($positionX, $lineHeight);
+        $this->printHeaderItem(
+            $this->date,
+            $this->lang['date'],
+            $positionX,
+            $lineHeight
+        );
         // Time
-        $this->printTime($positionX, $lineHeight);
+        $this->printHeaderItem(
+            $this->time,
+            $this->lang['time'],
+            $positionX,
+            $lineHeight
+        );
         // Payment date
-        $this->printPaymentDate($positionX, $lineHeight);
+        $this->printHeaderItem(
+            $this->paymentDate,
+            $this->lang['payment'],
+            $positionX,
+            $lineHeight
+        );
         // Due date
-        $this->printDueDate($positionX, $lineHeight);
+        $this->printHeaderItem(
+            $this->due,
+            $this->lang['due'],
+            $positionX,
+            $lineHeight
+        );
         // Custom Headers
         $this->printCustomHeaders($positionX, $lineHeight);
         // First page
@@ -276,120 +418,41 @@ class InvoicePrinter extends AbstractDocumentPrinter
             return;
         }
         if (self::TOTAL_ALIGNMENT_HORIZONTAL === $this->totalsAlignment) {
-            $this->Ln(2);
-            $totalsCount = count($this->totals);
-            $cellWidth = ($this->document['w'] - $this->margins['l'] - $this->margins['r']) / $totalsCount;
-            // Colors, line width and bold font
-            $this->SetFillColor($this->color[0], $this->color[1], $this->color[2]);
-            $this->SetTextColor(255, 255, 255);
-            $this->SetDrawColor($this->color[0], $this->color[1], $this->color[2]);
-            $this->SetLineWidth(.3);
-            $this->SetFont($this->font, 'b', 8);
-            // Header
-            foreach ($this->totals as $i => $totalData) {
-                $this->Cell(
-                    0 == $totalsCount % 2 ? (0 == $i % 2 ? $cellWidth + 5 : $cellWidth - 5) : $cellWidth,
-                    7,
-                    $this->changeCharset($totalData->getName()),
-                    1,
-                    0,
-                    'C',
-                    true
-                );
-            }
-            $this->Ln();
-            // Values
-            $this->SetTextColor(50, 50, 50);
-            $this->SetFont($this->font, 'b', 8);
-            $this->SetFillColor($bgColor, $bgColor, $bgColor);
-            for ($y = 0; $y < $totalsCount; ++$y) {
-                $totalData = $this->totals[$i];
-                $this->Cell(
-                    0 == $totalsCount % 2 ? (0 == $y % 2 ? $cellWidth + 5 : $cellWidth - 5) : $cellWidth,
-                    6,
-                    $this->changeCharset($totalData->getValue()),
-                    'LRB',
-                    0,
-                    'C',
-                    $totalData->isColored()
-                );
-            }
-            $this->Ln();
-        } else {
-            foreach ($this->totals as $total) {
-                $this->SetTextColor(50, 50, 50);
-                $this->SetFillColor($bgColor, $bgColor, $bgColor);
-                $this->Cell(1 + $this->firstColumnWidth, $cellHeight, '', 0, 0, 'L', 0);
-                $this->Cell($widthQuantity, $cellHeight, '', 0, 0, 'L', 0);
-                $this->Cell($this->columnSpacing, $cellHeight, '', 0, 0, 'L', 0);
-                for ($i = 0; $i < $this->columns - 4; ++$i) {
-                    $this->Cell($width_other, $cellHeight, '', 0, 0, 'L', 0);
-                    $this->Cell($this->columnSpacing, $cellHeight, '', 0, 0, 'L', 0);
-                }
-                $this->Cell($this->columnSpacing, $cellHeight, '', 0, 0, 'L', 0);
-                if ($total->isColored()) {
-                    $this->SetTextColor(255, 255, 255);
-                    $this->SetFillColor($this->color[0], $this->color[1], $this->color[2]);
-                }
-                $this->SetFont($this->font, 'b', 8);
-                $this->Cell(1, $cellHeight, '', 0, 0, 'L', 1);
-                $this->Cell(
-                    $width_other - 1,
-                    $cellHeight,
-                    $this->changeCharset($total->getName()),
-                    0,
-                    0,
-                    'L',
-                    1
-                );
-                $this->Cell($this->columnSpacing, $cellHeight, '', 0, 0, 'L', 0);
-                $this->SetFont($this->font, 'b', 8);
-                $this->SetFillColor($bgColor, $bgColor, $bgColor);
-                if ($total->isColored()) {
-                    $this->SetTextColor(255, 255, 255);
-                    $this->SetFillColor($this->color[0], $this->color[1], $this->color[2]);
-                }
-                $this->Cell(
-                    $width_other,
-                    $cellHeight,
-                    $this->changeCharset($total->getValue()),
-                    0,
-                    0,
-                    'C',
-                    1
-                );
-                $this->Ln();
-                $this->Ln($this->columnSpacing);
-            }
+            $this->addTotalsHorizontal($bgColor);
+
+            return;
         }
+
+        $this->addTotalsVertical($bgColor, $cellHeight, $widthQuantity, $width_other);
     }
 
     /**
      * @throws PDFInvoiceException
      */
-    protected function badge(int $badgeX, int $badgeY): void
+    protected function badge(float $badgeX, float $badgeY): void
     {
-        if ($this->badge) {
-            $tmpBadge = ' ' . mb_strtoupper($this->badge, self::ICONV_CHARSET_INPUT) . ' ';
-            $resetX = $this->GetX();
-            $resetY = $this->GetY();
-            $this->SetXY($badgeX, $badgeY + 15);
-            $this->SetLineWidth(0.4);
-            $this->SetDrawColor($this->badgeColor[0], $this->badgeColor[1], $this->badgeColor[2]);
-            $this->SetTextColor($this->badgeColor[0], $this->badgeColor[1], $this->badgeColor[2]);
-            $this->SetFont($this->font, 'b', 15);
-            $this->Rotate(10, $this->GetX(), $this->GetY());
-            $this->Rect($this->GetX(), $this->GetY(), $this->GetStringWidth($tmpBadge) + 2, 10);
-            $this->Write(
-                10,
-                $this->changeCharset($tmpBadge, true)
-            );
-            $this->Rotate(0);
-            if ($resetY > $this->GetY() + 20) {
-                $this->SetXY($resetX, $resetY);
-            } else {
-                $this->Ln(18);
-            }
+        if (empty($this->badge)) {
+            return;
+        }
+        $tmpBadge = ' ' . mb_strtoupper($this->badge, self::ICONV_CHARSET_INPUT) . ' ';
+        $resetX = $this->GetX();
+        $resetY = $this->GetY();
+        $this->SetXY($badgeX, $badgeY + 15);
+        $this->SetLineWidth(0.4);
+        $this->SetDrawColor($this->badgeColor[0], $this->badgeColor[1], $this->badgeColor[2]);
+        $this->SetTextColor($this->badgeColor[0], $this->badgeColor[1], $this->badgeColor[2]);
+        $this->SetFont($this->font, 'b', 15);
+        $this->Rotate(10, $this->GetX(), $this->GetY());
+        $this->Rect($this->GetX(), $this->GetY(), $this->GetStringWidth($tmpBadge) + 2, 10);
+        $this->Write(
+            10,
+            $this->changeCharset($tmpBadge, true)
+        );
+        $this->Rotate(0);
+        if ($resetY > $this->GetY() + 20) {
+            $this->SetXY($resetX, $resetY);
+        } else {
+            $this->Ln(18);
         }
     }
 
@@ -399,61 +462,52 @@ class InvoicePrinter extends AbstractDocumentPrinter
     protected function addInformation(): void
     {
         foreach ($this->addText as $text) {
-            if ('title' === $text[0]) {
+            if ('title' === $text->getType()) {
                 $this->SetFont($this->font, 'b', 9);
                 $this->SetTextColor(50, 50, 50);
                 $this->Cell(
                     0,
                     10,
-                    $this->changeCharset($text[1], true),
+                    $this->changeCharset($text->getText(), true, $text->getEncoding()),
                     0,
                     0,
                     'L',
                     0
                 );
-                $this->Ln();
-                $this->SetLineWidth(0.3);
-                $this->SetDrawColor($this->color[0], $this->color[1], $this->color[2]);
-                $this->Line(
-                    $this->margins['l'],
-                    $this->GetY(),
-                    $this->document['w'] - $this->margins['r'],
-                    $this->GetY()
-                );
-                $this->Ln(2);
+                $this->addHeaderEndLine();
             }
-            if ('paragraph' === $text[0]) {
+            if ('paragraph' === $text->getType()) {
                 $this->SetTextColor(80, 80, 80);
                 $this->SetFont($this->font, '', 8);
                 $this->MultiCell(
                     0,
                     4,
-                    $this->changeCharset($text[1], false, $text[2]),
+                    $this->changeCharset($text->getText(), false, $text->getEncoding()),
                     0,
                     'L',
                     0
                 );
                 $this->Ln(2);
             }
-            if ('bold_paragraph' === $text[0]) {
+            if ('bold_paragraph' === $text->getType()) {
                 $this->SetFont($this->font, 'b', 8);
                 $this->SetTextColor(50, 50, 50);
                 $this->MultiCell(
                     0,
                     4,
-                    $this->changeCharset($text[1], false, $text[2]),
+                    $this->changeCharset($text->getText(), false, $text->getEncoding()),
                     0,
                     'L',
                     0
                 );
             }
-            if ('link' === $text[0]) {
+            if ('link' === $text->getType()) {
                 $this->SetFont($this->font, 'b', 8);
                 $this->SetTextColor($this->color[0], $this->color[1], $this->color[2]);
                 $this->MultiCell(
                     0,
                     4,
-                    $this->changeCharset($text[1], false, $text[2]),
+                    $this->changeCharset($text->getText(), false, $text->getEncoding()),
                     0,
                     'L',
                     0
@@ -469,102 +523,37 @@ class InvoicePrinter extends AbstractDocumentPrinter
     {
         /** @var InvoiceItem $item */
         foreach ($this->items as $item) {
-            if ((empty($item->getName())) || (empty($item->getDescription()))) {
-                $this->Ln($this->columnSpacing);
+            $cHeight = $this->printStandardItems($item, $cellHeight, $bgColor, $widthQuantity);
+            if ($this->vatField) {
+                $this->printCommonField(
+                    $item->getVat(),
+                    $cHeight,
+                    $width_other
+                );
             }
-            $this->printFirstDescription($item->getDescription());
-            $cHeight = $cellHeight;
-            $this->SetFont($this->font, 'b', 8);
-            $this->SetTextColor(50, 50, 50);
-            $this->SetFillColor($bgColor, $bgColor, $bgColor);
-            $this->Cell(1, $cHeight, '', 0, 0, 'L', 1);
-            $x = $this->GetX();
-            $this->Cell(
-                $this->firstColumnWidth,
-                $cHeight,
-                $this->changeCharset($item->getName()),
-                0,
-                0,
-                'L',
-                1
-            );
-            $cHeight = $this->printDescription($item->getDescription(), $x, $cHeight);
-            $this->SetTextColor(50, 50, 50);
-            $this->SetFont($this->font, '', 8);
-            $this->Cell($this->columnSpacing, $cHeight, '', 0, 0, 'L', 0);
-            $this->Cell($widthQuantity, $cHeight, $item->getQuantity(), 0, 0, 'C', 1);
-            $this->printVatField($cHeight, $item, $width_other);
-            $this->printPriceField($cHeight, $item, $width_other);
-            $this->printDiscountField($cHeight, $item, $width_other);
-            $this->printTotalField($cHeight, $item, $width_other);
+            if ($this->priceField) {
+                $this->printCommonField(
+                    $item->getPrice(),
+                    $cHeight,
+                    $width_other
+                );
+            }
+            if ($this->discountField) {
+                $this->printCommonField(
+                    $item->getDiscount(),
+                    $cHeight,
+                    $width_other
+                );
+            }
+            if ($this->totalField) {
+                $this->printCommonField(
+                    $item->getTotal(),
+                    $cHeight,
+                    $width_other
+                );
+            }
             $this->Ln();
             $this->Ln($this->columnSpacing);
-        }
-    }
-
-    /**
-     * @throws PDFInvoiceException
-     */
-    protected function printReference(float $positionX, float $lineHeight): void
-    {
-        if (!empty($this->reference)) {
-            $this->Cell($positionX, $lineHeight);
-            $this->SetTextColor($this->color[0], $this->color[1], $this->color[2]);
-            $this->Cell(
-                32,
-                $lineHeight,
-                $this->changeCharset($this->lang['number'], true),
-                0,
-                0,
-                'L'
-            );
-            $this->SetTextColor(50, 50, 50);
-            $this->SetFont($this->font, '', 9);
-            $this->Cell(0, $lineHeight, $this->reference, 0, 1, 'R');
-        }
-    }
-
-    /**
-     * @throws PDFInvoiceException
-     */
-    protected function printDate(float $positionX, float $lineHeight): void
-    {
-        $this->Cell($positionX, $lineHeight);
-        $this->SetFont($this->font, 'B', 9);
-        $this->SetTextColor($this->color[0], $this->color[1], $this->color[2]);
-        $this->Cell(
-            32,
-            $lineHeight,
-            $this->changeCharset($this->lang['date'], true) . ':',
-            0,
-            0,
-            'L'
-        );
-        $this->SetTextColor(50, 50, 50);
-        $this->SetFont($this->font, '', 9);
-        $this->Cell(0, $lineHeight, $this->date, 0, 1, 'R');
-    }
-
-    /**
-     * @throws PDFInvoiceException
-     */
-    protected function printTime(float $positionX, float $lineHeight): void
-    {
-        if (!empty($this->time)) {
-            $this->Cell($positionX, $lineHeight);
-            $this->SetFont($this->font, 'B', 9);
-            $this->SetTextColor($this->color[0], $this->color[1], $this->color[2]);
-            $this->Cell(
-                32,
-                $lineHeight,
-                $this->changeCharset($this->lang['time'], true) . ':',
-                0,
-                0,
-                'L'
-            );
-            $this->SetTextColor(50, 50, 50);
-            $this->SetFont($this->font, '', 9);
-            $this->Cell(0, $lineHeight, $this->time, 0, 1, 'R');
         }
     }
 
@@ -575,20 +564,12 @@ class InvoicePrinter extends AbstractDocumentPrinter
     {
         if (count($this->customHeaders) > 0) {
             foreach ($this->customHeaders as $customHeader) {
-                $this->Cell($positionX, $lineHeight);
-                $this->SetFont($this->font, 'B', 9);
-                $this->SetTextColor($this->color[0], $this->color[1], $this->color[2]);
-                $this->Cell(
-                    32,
-                    $lineHeight,
-                    $this->changeCharset($this->lang['title'], true) . ':',
-                    0,
-                    0,
-                    'L'
+                $this->printHeaderItem(
+                    $customHeader->getContent(),
+                    $this->lang['title'],
+                    $positionX,
+                    $lineHeight
                 );
-                $this->SetTextColor(50, 50, 50);
-                $this->SetFont($this->font, '', 9);
-                $this->Cell(0, $lineHeight, $customHeader['content'], 0, 1, 'R');
             }
         }
     }
@@ -604,234 +585,18 @@ class InvoicePrinter extends AbstractDocumentPrinter
             return;
         }
         $width_other = $this->addHeaderStartTuning();
-        $this->addHeaderProduct();
-        $this->addHeaderQTY($width_other);
+        $this->addHeaderItem($this->lang['product'], $this->firstColumnWidth);
         if ($this->vatField) {
-            $this->Cell($this->columnSpacing, 10, '', 0, 0, 'L', 0);
-            $this->Cell(
-                $width_other,
-                10,
-                $this->changeCharset($this->lang['vat'], true),
-                0,
-                0,
-                'C',
-                0
-            );
+            $this->addHeaderItem($this->lang['vat'], $width_other);
         }
         if ($this->priceField) {
-            $this->Cell($this->columnSpacing, 10, '', 0, 0, 'L', 0);
-            $this->Cell(
-                $width_other + 5,
-                10,
-                $this->changeCharset($this->lang['price'], true),
-                0,
-                0,
-                'C',
-                0
-            );
+            $this->addHeaderItem($this->lang['price'], $width_other + 5.0);
         }
         if ($this->discountField) {
-            $this->Cell($this->columnSpacing, 10, '', 0, 0, 'L', 0);
-            $this->Cell(
-                $width_other,
-                10,
-                $this->changeCharset($this->lang['discount'], true),
-                0,
-                0,
-                'C',
-                0
-            );
+            $this->addHeaderItem($this->lang['discount'], $width_other);
         }
 
-        $this->addHeaderTotal($width_other);
-        $this->Ln();
-        $this->SetLineWidth(0.3);
-        $this->SetDrawColor(
-            $this->color[0],
-            $this->color[1],
-            $this->color[2]
-        );
-        $this->Line(
-            $this->margins['l'],
-            $this->GetY(),
-            $this->document['w'] - $this->margins['r'],
-            $this->GetY()
-        );
-        $this->Ln(2);
-    }
-
-    /**
-     * @throws PDFInvoiceException
-     */
-    protected function printVatField(float $cHeight, InvoiceItem $item, float $width_other): void
-    {
-        if ($this->vatField) {
-            $this->Cell($this->columnSpacing, $cHeight, '', 0, 0, 'L', 0);
-            if (!empty($item->getVat())) {
-                $this->Cell(
-                    $width_other,
-                    $cHeight,
-                    $this->changeCharset($item->getVat()),
-                    0,
-                    0,
-                    'C',
-                    1
-                );
-            } else {
-                $this->Cell(
-                    $width_other,
-                    $cHeight,
-                    '',
-                    0,
-                    0,
-                    'C',
-                    1
-                );
-            }
-        }
-    }
-
-    /**
-     * @throws PDFInvoiceException
-     */
-    protected function printPriceField(float $cHeight, InvoiceItem $item, float $width_other): void
-    {
-        if ($this->priceField) {
-            $this->Cell($this->columnSpacing, $cHeight, '', 0, 0, 'L', 0);
-            if (!empty($item->getPrice())) {
-                $this->Cell(
-                    $width_other,
-                    $cHeight,
-                    $this->changeCharset($item->getPrice()),
-                    0,
-                    0,
-                    'C',
-                    1
-                );
-            } else {
-                $this->Cell(
-                    $width_other,
-                    $cHeight,
-                    '',
-                    0,
-                    0,
-                    'C',
-                    1
-                );
-            }
-        }
-    }
-
-    /**
-     * @throws PDFInvoiceException
-     */
-    protected function printDiscountField(float $cHeight, InvoiceItem $item, float $width_other): void
-    {
-        if ($this->discountField) {
-            $this->Cell($this->columnSpacing, $cHeight, '', 0, 0, 'L', 0);
-            if (!empty($item->getDiscount())) {
-                $this->Cell(
-                    $width_other,
-                    $cHeight,
-                    $this->changeCharset($item->getDiscount()),
-                    0,
-                    0,
-                    'C',
-                    1
-                );
-            } else {
-                $this->Cell(
-                    $width_other,
-                    $cHeight,
-                    '',
-                    0,
-                    0,
-                    'C',
-                    1
-                );
-            }
-        }
-    }
-
-    /**
-     * @throws PDFInvoiceException
-     */
-    protected function printTotalField(float $cHeight, AbstractInvoiceItem $item, float $width_other): void
-    {
-        if ($this->totalField) {
-            $this->Cell($this->columnSpacing, $cHeight, '', 0, 0, 'L', 0);
-            if (!empty($item->getTotal())) {
-                $this->Cell(
-                    $width_other,
-                    $cHeight,
-                    $this->changeCharset($item->getTotal()),
-                    0,
-                    0,
-                    'C',
-                    1
-                );
-            } else {
-                $this->Cell(
-                    $width_other,
-                    $cHeight,
-                    '',
-                    0,
-                    0,
-                    'C',
-                    1
-                );
-            }
-        }
-    }
-
-    /**
-     * @throws PDFInvoiceException
-     */
-    protected function printFirstDescription(?string $description): void
-    {
-        if (empty($description)) {
-            return;
-        }
-        // Precalculate height
-        $calculateHeight = new self();
-        $calculateHeight->AddPage();
-        $calculateHeight->SetXY(0, 0);
-        $calculateHeight->SetFont($this->font, '', 7);
-        $calculateHeight->MultiCell(
-            $this->firstColumnWidth,
-            3,
-            $this->changeCharset($description),
-            0,
-            'L',
-            1
-        );
-        $pageHeight = $this->document['h'] - $this->GetY() - $this->margins['t'] - $this->margins['t'];
-        if ($pageHeight < 35) {
-            $this->AddPage();
-        }
-    }
-
-    /**
-     * @throws PDFInvoiceException
-     */
-    protected function printDueDate(int $positionX, int $lineHeight): void
-    {
-        if (empty($this->due)) {
-            return;
-        }
-        $this->Cell($positionX, $lineHeight);
-        $this->SetFont($this->font, 'B', 9);
-        $this->SetTextColor($this->color[0], $this->color[1], $this->color[2]);
-        $this->Cell(
-            32,
-            $lineHeight,
-            $this->changeCharset($this->lang['due'], true) . ':',
-            0,
-            0,
-            'L'
-        );
-        $this->SetTextColor(50, 50, 50);
-        $this->SetFont($this->font, '', 9);
-        $this->Cell(0, $lineHeight, $this->due, 0, 1, 'R');
+        $this->addHeaderItem($this->lang['total'], $width_other);
+        $this->addHeaderEndLine();
     }
 }

@@ -74,73 +74,28 @@ class CreditNotePrinter extends InvoicePrinter
             return;
         }
         $width_other = $this->addHeaderStartTuning();
-        $this->addHeaderProduct();
-        $this->addHeaderQTY($width_other);
+        $this->addHeaderItem($this->lang['product'], $width_other);
+        $this->addHeaderItem($this->lang['discount'], $width_other);
+        $this->addHeaderItem($this->lang['qty'], $width_other);
 
         if ($this->priceField) {
-            $this->Cell($this->columnSpacing, 10, '', 0, 0, 'L', 0);
-            $this->Cell(
-                $width_other + 5,
-                10,
-                $this->changeCharset($this->lang['price'], true),
-                0,
-                0,
-                'C',
-                0
-            );
+            $this->addHeaderItem($this->lang['price'], $width_other + 5.0);
         }
 
         if ($this->vatField) {
-            $this->Cell($this->columnSpacing, 10, '', 0, 0, 'L', 0);
-            $this->Cell(
-                $width_other,
-                10,
-                $this->changeCharset($this->lang['vat'], true),
-                0,
-                0,
-                'C',
-                0
-            );
+            $this->addHeaderItem($this->lang['vat'], $width_other);
         }
 
         if ($this->vatPercentField) {
-            $this->lang['vat_percent'] = 'VAT %';
-            $this->Cell($this->columnSpacing, 10, '', 0, 0, 'L', 0);
-            $this->Cell(
-                $width_other,
-                10,
-                $this->changeCharset($this->lang['vat_percent'], true),
-                0,
-                0,
-                'C',
-                0
-            );
+            $this->addHeaderItem('VAT %', $width_other);
         }
 
         if ($this->discountField) {
-            $this->Cell($this->columnSpacing, 10, '', 0, 0, 'L', 0);
-            $this->Cell(
-                $width_other,
-                10,
-                $this->changeCharset($this->lang['discount'], true),
-                0,
-                0,
-                'C',
-                0
-            );
+            $this->addHeaderItem($this->lang['discount'], $width_other);
         }
 
         if ($this->totalField) {
-            $this->Cell($this->columnSpacing, 10, '', 0, 0, 'L', 0);
-            $this->Cell(
-                $width_other + 10,
-                10,
-                $this->changeCharset($this->lang['total'], true),
-                0,
-                0,
-                'C',
-                0
-            );
+            $this->addHeaderItem($this->lang['total'], $width_other);
         }
 
         $this->addHeaderEndLine();
@@ -149,64 +104,46 @@ class CreditNotePrinter extends InvoicePrinter
     #[\Override]
     protected function addItems(float $cellHeight, int $bgColor, float $widthQuantity, float $width_other): void
     {
-        if ($this->items) {
-            /** @var CreditNoteItem $item */
-            foreach ($this->items as $item) {
-                if ((empty($item->getName())) || (empty($item->getDescription()))) {
-                    $this->Ln($this->columnSpacing);
-                }
-                $this->printFirstDescription($item->getDescription());
-                $cHeight = $cellHeight;
-                $this->SetFont($this->font, 'b', 8);
-                $this->SetTextColor(50, 50, 50);
-                $this->SetFillColor($bgColor, $bgColor, $bgColor);
-                $this->Cell(1, $cHeight, '', 0, 0, 'L', 1);
-                $x = $this->GetX();
-                $this->Cell(
-                    $this->firstColumnWidth,
+        /** @var CreditNoteItem $item */
+        foreach ($this->items as $item) {
+            $cHeight = $this->printStandardItems($item, $cellHeight, $bgColor, $widthQuantity);
+            if ($this->priceField) {
+                $this->printCommonField(
+                    $item->getPrice(),
                     $cHeight,
-                    $this->changeCharset($item->getName()),
-                    0,
-                    0,
-                    'L',
-                    1
+                    $width_other
                 );
-                $cHeight = $this->printDescription($item->getDescription(), $x, $cHeight);
-                $this->SetTextColor(50, 50, 50);
-                $this->SetFont($this->font, '', 8);
-                $this->Cell($this->columnSpacing, $cHeight, '', 0, 0, 'L', 0);
-                $this->Cell($widthQuantity, $cHeight, $item->getQuantity(), 0, 0, 'C', 1);
-                $this->printPriceField($cHeight, $item, $width_other);
-                $this->printVatField($cHeight, $item, $width_other);
-                $this->printVatPercentField($cHeight, $item, $width_other);
-                $this->printDiscountField($cHeight, $item, $width_other);
-                $this->printTotalField($cHeight, $item, $width_other);
-                $this->Ln();
-                $this->Ln($this->columnSpacing);
             }
-        }
-    }
-
-    /**
-     * @throws PDFInvoiceException
-     */
-    private function printVatPercentField(float $cHeight, CreditNoteItem $item, float $width_other): void
-    {
-        if ($this->vatPercentField) {
-            $this->Cell($this->columnSpacing, $cHeight, '', 0, 0, 'L', 0);
-            if (!empty($item->getVatPercent())) {
-                $this->Cell(
-                    $width_other,
+            if ($this->vatField) {
+                $this->printCommonField(
+                    $item->getVat(),
                     $cHeight,
-                    $this->changeCharset($item->getVatPercent()),
-                    0,
-                    0,
-                    'C',
-                    1
+                    $width_other
                 );
-            } else {
-                $this->Cell($width_other, $cHeight, '', 0, 0, 'C', 1);
             }
+            if ($this->vatPercentField) {
+                $this->printCommonField(
+                    $item->getVatPercent(),
+                    $cHeight,
+                    $width_other
+                );
+            }
+            if ($this->discountField) {
+                $this->printCommonField(
+                    $item->getDiscount(),
+                    $cHeight,
+                    $width_other
+                );
+            }
+            if ($this->totalField) {
+                $this->printCommonField(
+                    $item->getTotal(),
+                    $cHeight,
+                    $width_other
+                );
+            }
+            $this->Ln();
+            $this->Ln($this->columnSpacing);
         }
     }
 }

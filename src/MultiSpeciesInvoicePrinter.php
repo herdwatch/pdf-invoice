@@ -64,13 +64,33 @@ class MultiSpeciesInvoicePrinter extends InvoicePrinter
             );
 
         // Number
-        $this->printReference($positionX, $lineHeight);
+        $this->printHeaderItem(
+            $this->reference,
+            $this->lang['number'],
+            $positionX,
+            $lineHeight
+        );
         // Date
-        $this->printDate($positionX, $lineHeight);
+        $this->printHeaderItem(
+            $this->date,
+            $this->lang['date'],
+            $positionX,
+            $lineHeight
+        );
         // Time
-        $this->printTime($positionX, $lineHeight);
+        $this->printHeaderItem(
+            $this->time,
+            $this->lang['time'],
+            $positionX,
+            $lineHeight
+        );
         // Due date
-        $this->printDueDate($positionX, $lineHeight);
+        $this->printHeaderItem(
+            $this->due,
+            $this->lang['due'],
+            $positionX,
+            $lineHeight
+        );
         // Service period
         $this->printServicePeriod($positionX, $lineHeight);
         // Custom Headers
@@ -112,10 +132,9 @@ class MultiSpeciesInvoicePrinter extends InvoicePrinter
         }
 
         $width_other = $this->addHeaderStartTuning();
-        $this->addHeaderProduct();
-        $this->addHeaderQTY($width_other);
-        $this->addHeaderNotes($width_other);
-        $this->addHeaderTotal($width_other);
+        $this->addHeaderItem($this->lang['product'], $width_other);
+        $this->addHeaderItem('Notes', $width_other);
+        $this->addHeaderItem($this->lang['total'], $width_other);
         $this->addHeaderEndLine();
     }
 
@@ -124,15 +143,7 @@ class MultiSpeciesInvoicePrinter extends InvoicePrinter
     {
         /** @var MultiSpeciesInvoiceItem $item */
         foreach ($this->items as $item) {
-            if ((empty($item->getName())) || (empty($item->getDescription()))) {
-                $this->Ln($this->columnSpacing);
-            }
-            $this->printFirstDescription($item->getDescription());
-            $cHeight = $cellHeight;
-            $this->SetFont($this->font, 'b', 8);
-            $this->SetTextColor(50, 50, 50);
-            $this->SetFillColor($bgColor, $bgColor, $bgColor);
-            $this->Cell(1, $cHeight, '', 0, 0, 'L', 1);
+            $cHeight = $this->printStandardFirstDescription($item, $cellHeight, $bgColor);
             $x = $this->GetX();
             $this->fixedHeightCell(
                 $this->firstColumnWidth,
@@ -148,12 +159,15 @@ class MultiSpeciesInvoicePrinter extends InvoicePrinter
             $this->Cell($this->columnSpacing, $cHeight, '', 0, 0, 'L', 0);
             $this->Cell($widthQuantity, $cHeight, $item->getQuantity(), 0, 0, 'C', 1);
             $this->printNotesField($cHeight, $item, $width_other, $bgColor);
-            $this->totalField = true;
             if ($item->isNegative()) {
                 $this->SetFont($this->font, 'B', 8);
                 $this->SetTextColor(255, 0, 0);
             }
-            $this->printTotalField($cHeight, $item, $width_other);
+            $this->printCommonField(
+                $item->getTotal(),
+                $cHeight,
+                $width_other
+            );
             $this->SetTextColor(50, 50, 50);
             $this->SetFont($this->font, '', 8);
             $this->Ln();
@@ -180,24 +194,6 @@ class MultiSpeciesInvoicePrinter extends InvoicePrinter
         $tempTextColor = $specialTotal->getTextColor() ?? new Color(255, 255, 255);
         $this->setTextColorData($tempTextColor);
         $this->setFillColorData($tempBgColor);
-    }
-
-    /**
-     * @throws PDFInvoiceException
-     */
-    private function addHeaderNotes(float $width_other): void
-    {
-        // Notes
-        $this->Cell($this->columnSpacing, 10, '', 0, 0, 'L', 0);
-        $this->Cell(
-            $width_other * 2,
-            10,
-            $this->changeCharset('Notes', true),
-            0,
-            0,
-            'C',
-            0
-        );
     }
 
     /**

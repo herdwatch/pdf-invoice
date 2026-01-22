@@ -3,6 +3,8 @@
 namespace Herdwatch\PdfInvoice;
 
 use Herdwatch\PdfInvoice\Data\AbstractInvoiceItem;
+use Herdwatch\PdfInvoice\Data\CustomHeaderItem;
+use Herdwatch\PdfInvoice\Data\InvoiceItem;
 use Herdwatch\PdfInvoice\Data\TotalItem;
 
 abstract class AbstractDocumentPrinter extends ExtendedFPDF
@@ -32,7 +34,7 @@ abstract class AbstractDocumentPrinter extends ExtendedFPDF
     public array $totals = [];
 
     /**
-     * @var array<int, array<string, string>>
+     * @var CustomHeaderItem[]
      */
     public array $customHeaders = [];
 
@@ -150,10 +152,7 @@ abstract class AbstractDocumentPrinter extends ExtendedFPDF
 
     public function addCustomHeader(string $title, string $content): void
     {
-        $this->customHeaders[] = [
-            'title' => $title,
-            'content' => $content,
-        ];
+        $this->customHeaders[] = new CustomHeaderItem($title, $content);
     }
 
     public function addTotal(string $name, float $value, bool $colored = false): void
@@ -188,6 +187,70 @@ abstract class AbstractDocumentPrinter extends ExtendedFPDF
         // Title
         $this->printTitle();
         $this->headerItems();
+    }
+
+    /**
+     * @throws PDFInvoiceException
+     */
+    protected function addHeaderItem(
+        string $name,
+        float $width_other,
+    ): void {
+        $this->Cell($this->columnSpacing, 10, '', 0, 0, 'L', 0);
+        $this->Cell(
+            $width_other,
+            10,
+            $this->changeCharset($name, true),
+            0,
+            0,
+            'C',
+            0
+        );
+    }
+
+    /**
+     * @throws PDFInvoiceException
+     */
+    protected function printFirstDescription(?string $description): void
+    {
+        if (empty($description)) {
+            return;
+        }
+        // Precalculate height
+        $calculateHeight = new static();
+        $calculateHeight->AddPage();
+        $calculateHeight->SetXY(0, 0);
+        $calculateHeight->SetFont($this->font, '', 7);
+        $calculateHeight->MultiCell(
+            $this->firstColumnWidth,
+            3,
+            $this->changeCharset($description),
+            0,
+            'L',
+            1
+        );
+        $pageHeight = $this->document['h'] - $this->GetY() - $this->margins['t'] - $this->margins['t'];
+        if ($pageHeight < 35) {
+            $this->AddPage();
+        }
+    }
+
+    /**
+     * @throws PDFInvoiceException
+     */
+    protected function printStandardFirstDescription(AbstractInvoiceItem|InvoiceItem $item, float $cellHeight, int $bgColor): float
+    {
+        if ((empty($item->getName())) || (empty($item->getDescription()))) {
+            $this->Ln($this->columnSpacing);
+        }
+        $this->printFirstDescription($item->getDescription());
+        $cHeight = $cellHeight;
+        $this->SetFont($this->font, 'b', 8);
+        $this->SetTextColor(50, 50, 50);
+        $this->SetFillColor($bgColor, $bgColor, $bgColor);
+        $this->Cell(1, $cHeight, '', 0, 0, 'L', 1);
+
+        return $cHeight;
     }
 
     protected function recalculateColumns(): void
@@ -246,6 +309,9 @@ abstract class AbstractDocumentPrinter extends ExtendedFPDF
         }
     }
 
+    /**
+     * @throws PDFInvoiceException
+     */
     protected function doDisplayToFrom(mixed $width, int $lineHeight): void
     {
         if ($this->displayToFrom) {
@@ -312,6 +378,101 @@ abstract class AbstractDocumentPrinter extends ExtendedFPDF
     /**
      * @throws PDFInvoiceException
      */
+    protected function doDisplayToFromHeaders(mixed $width, int $lineHeight): void
+    {
+        if ($this->displayToFromHeaders) {
+            $this->Cell($width, $lineHeight, $this->changeCharset(mb_strtoupper($this->lang['from'], self::ICONV_CHARSET_INPUT)), 0, 0, 'L');
+            $this->Cell(0, $lineHeight, $this->changeCharset(mb_strtoupper($this->lang['to'], self::ICONV_CHARSET_INPUT)), 0, 0, 'L');
+            $this->Ln(7);
+            $this->SetLineWidth(0.4);
+            $this->Line($this->margins['l'], $this->GetY(), $this->margins['l'] + $width - 10, $this->GetY());
+            $this->Line(
+                $this->margins['l'] + $width,
+                $this->GetY(),
+                $this->margins['l'] + $width + $width,
+                $this->GetY()
+            );
+
+            return;
+        }
+        $this->Ln(2);
+    }
+
+    protected function addHeaderStartTuning(): float
+    {
+        $width_other = ($this->document['w']
+                - $this->margins['l']
+                - $this->margins['r']
+                - $this->firstColumnWidth
+                - ($this->columns * $this->columnSpacing)) / ($this->columns - 1);
+        $this->SetTextColor(50, 50, 50);
+        $this->Ln(12);
+        $this->SetFont($this->font, 'B', 9);
+        $this->Cell(1, 10, '', 0, 0, 'L', 0);
+
+        return (float) $width_other;
+    }
+
+    protected function addHeaderEndLine(): void
+    {
+        $this->Ln();
+        $this->SetLineWidth(0.3);
+        $this->SetDrawColor($this->color[0], $this->color[1], $this->color[2]);
+        $this->Line($this->margins['l'], $this->GetY(), $this->document['w'] - $this->margins['r'], $this->GetY());
+        $this->Ln(2);
+    }
+
+    abstract protected function headerItems(): void;
+
+    /**
+     * @throws PDFInvoiceException
+     */
+    protected function printTitle(): void
+    {
+        $this->SetTextColor(0, 0, 0);
+        $this->SetFont($this->font, 'B', 20);
+        if (!empty($this->title)) {
+            $this->Cell(
+                0,
+                5,
+                $this->changeCharset($this->title, true),
+                0,
+                1,
+                'R'
+            );
+        }
+        $this->SetFont($this->font, '', 9);
+        $this->Ln(5);
+    }
+
+    /**
+     * @throws PDFInvoiceException
+     */
+    protected function printStandardItems(AbstractInvoiceItem|InvoiceItem $item, float $cellHeight, int $bgColor, float $widthQuantity): float
+    {
+        $cHeight = $this->printStandardFirstDescription($item, $cellHeight, $bgColor);
+        $x = $this->GetX();
+        $this->Cell(
+            $this->firstColumnWidth,
+            $cHeight,
+            $this->changeCharset($item->getName()),
+            0,
+            0,
+            'L',
+            1
+        );
+        $cHeight = $this->printDescription($item->getDescription(), $x, $cHeight);
+        $this->SetTextColor(50, 50, 50);
+        $this->SetFont($this->font, '', 8);
+        $this->Cell($this->columnSpacing, $cHeight, '', 0, 0, 'L', 0);
+        $this->Cell($widthQuantity, $cHeight, $item->getQuantity(), 0, 0, 'C', 1);
+
+        return $cHeight;
+    }
+
+    /**
+     * @throws PDFInvoiceException
+     */
     protected function printDescription(?string $description, int $x, float $cHeight): float
     {
         if (empty($description)) {
@@ -348,124 +509,25 @@ abstract class AbstractDocumentPrinter extends ExtendedFPDF
     /**
      * @throws PDFInvoiceException
      */
-    protected function doDisplayToFromHeaders(mixed $width, int $lineHeight): void
-    {
-        if ($this->displayToFromHeaders) {
-            $this->Cell($width, $lineHeight, $this->changeCharset(mb_strtoupper($this->lang['from'], self::ICONV_CHARSET_INPUT)), 0, 0, 'L');
-            $this->Cell(0, $lineHeight, $this->changeCharset(mb_strtoupper($this->lang['to'], self::ICONV_CHARSET_INPUT)), 0, 0, 'L');
-            $this->Ln(7);
-            $this->SetLineWidth(0.4);
-            $this->Line($this->margins['l'], $this->GetY(), $this->margins['l'] + $width - 10, $this->GetY());
-            $this->Line(
-                $this->margins['l'] + $width,
-                $this->GetY(),
-                $this->margins['l'] + $width + $width,
-                $this->GetY()
-            );
-
-            return;
-        }
-        $this->Ln(2);
-    }
-
-    protected function addHeaderStartTuning(): float
-    {
-        $width_other = ($this->document['w']
-                - $this->margins['l']
-                - $this->margins['r']
-                - $this->firstColumnWidth
-                - ($this->columns * $this->columnSpacing)) / ($this->columns - 1);
-        $this->SetTextColor(50, 50, 50);
-        $this->Ln(12);
-        $this->SetFont($this->font, 'B', 9);
-        $this->Cell(1, 10, '', 0, 0, 'L', 0);
-
-        return (float) $width_other;
-    }
-
-    /**
-     * @throws PDFInvoiceException
-     */
-    protected function addHeaderQTY(float $width_other): void
-    {
-        // QTY
-        $this->Cell($this->columnSpacing, 10, '', 0, 0, 'L', 0);
-        $this->Cell(
-            $width_other - 15,
-            10,
-            $this->changeCharset($this->lang['qty'], true),
-            0,
-            0,
-            'C',
-            0
-        );
-    }
-
-    /**
-     * @throws PDFInvoiceException
-     */
-    protected function addHeaderProduct(): void
-    {
-        // Product
-        $this->Cell(
-            $this->firstColumnWidth,
-            10,
-            $this->changeCharset($this->lang['product'], true),
-            0,
-            0,
-            'L',
-            0
-        );
-    }
-
-    /**
-     * @throws PDFInvoiceException
-     */
-    protected function addHeaderTotal(float $width_other): void
-    {
-        // Total
-        $this->Cell($this->columnSpacing, 10, '', 0, 0, 'L', 0);
-        $this->Cell(
-            $width_other + 10,
-            10,
-            $this->changeCharset($this->lang['total'], true),
-            0,
-            0,
-            'C',
-            0
-        );
-    }
-
-    protected function addHeaderEndLine(): void
-    {
-        $this->Ln();
-        $this->SetLineWidth(0.3);
-        $this->SetDrawColor($this->color[0], $this->color[1], $this->color[2]);
-        $this->Line($this->margins['l'], $this->GetY(), $this->document['w'] - $this->margins['r'], $this->GetY());
-        $this->Ln(2);
-    }
-
-    abstract protected function headerItems(): void;
-
-    /**
-     * @throws PDFInvoiceException
-     */
-    protected function printTitle(): void
-    {
-        $this->SetTextColor(0, 0, 0);
-        $this->SetFont($this->font, 'B', 20);
-        if (!empty($this->title)) {
+    protected function printCommonField(
+        string $fieldValue,
+        float $cHeight,
+        float $width_other,
+    ): void {
+        $this->Cell($this->columnSpacing, $cHeight, '', 0, 0, 'L', 0);
+        if (!empty($fieldValue)) {
             $this->Cell(
+                $width_other,
+                $cHeight,
+                $this->changeCharset($fieldValue),
                 0,
-                5,
-                $this->changeCharset($this->title, true),
                 0,
-                1,
-                'R'
+                'C',
+                1
             );
+        } else {
+            $this->Cell($width_other, $cHeight, '', 0, 0, 'C', 1);
         }
-        $this->SetFont($this->font, '', 9);
-        $this->Ln(5);
     }
 
     /**
