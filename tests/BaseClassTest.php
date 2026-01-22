@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Contains the BaseClassTest class.
  *
@@ -14,15 +15,20 @@ namespace Herdwatch\PdfInvoice\Tests;
 use Herdwatch\PdfInvoice\InvoicePrinter;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * @internal
+ *
+ * @coversNothing
+ */
 class BaseClassTest extends TestCase
 {
     /**
      * @test
      */
-    public function can_be_instantiated()
+    public function canBeInstantiated(): void
     {
-        $invoicr = new InvoicePrinter();
+        $invoice = new InvoicePrinter();
 
-        $this->assertInstanceOf(InvoicePrinter::class, $invoicr);
+        $this->assertInstanceOf(InvoicePrinter::class, $invoice);
     }
 }

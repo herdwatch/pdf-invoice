@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Contains the AAASmokeTest.php class.
  *
@@ -13,16 +14,21 @@ namespace Herdwatch\PdfInvoice\Tests;
 
 use PHPUnit\Framework\TestCase;
 
+/**
+ * @internal
+ *
+ * @coversNothing
+ */
 class AAASmokeTest extends TestCase
 {
-    public const MIN_PHP_VERSION = '7.4.0';
+    public const string MIN_PHP_VERSION = '7.4.0';
 
     /**
      * Very Basic smoke test case for testing against parse errors, etc.
      *
      * @test
      */
-    public function smoke()
+    public function smoke(): void
     {
         $this->assertTrue(true);
     }

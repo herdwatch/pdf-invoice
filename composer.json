@@ -14,7 +14,7 @@
         }
     ],
     "require": {
-        "php": "^7.4|^8.0",
+        "php": "^8.3",
         "ext-iconv": "*",
         "ext-mbstring": "*",
         "setasign/fpdf": "~1.8.1"
@@ -29,5 +29,16 @@
         "psr-4": {
             "Herdwatch\\PdfInvoice\\Tests\\": "tests/"
         }
+    },
+    "scripts": {
+        "phpstan": [
+            "Composer\\Config::disableProcessTimeout",
+            "./vendor-bin/phpstan/vendor/bin/phpstan --memory-limit=-1 -vvv"
+        ],
+        "phpstan-baseline": [
+            "Composer\\Config::disableProcessTimeout",
+            "./vendor-bin/phpstan/vendor/bin/phpstan analyze --memory-limit=-1 --generate-baseline phpstan-baseline.neon"
+        ],
+        "php-cs-fixer": "./vendor-bin/php-cs-fixer/vendor/bin/php-cs-fixer fix --verbose --show-progress=dots"
     }
 }

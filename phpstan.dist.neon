@@ -1,0 +1,16 @@
+includes:
+    - phpstan-baseline.neon
+    - vendor-bin/phpstan/vendor/phpstan/phpstan-phpunit/extension.neon
+    - vendor-bin/phpstan/vendor/phpstan/phpstan-deprecation-rules/rules.neon
+    - vendor-bin/phpstan/vendor/phpstan/phpstan-symfony/extension.neon
+    - vendor-bin/phpstan/vendor/phpstan/phpstan-doctrine/extension.neon
+
+parameters:
+    level: 7
+    paths:
+        - src
+        - tests
+        - migrations
+    excludePaths:
+        - src/**/*.tpl.php
+    tmpDir: var/phpstan
