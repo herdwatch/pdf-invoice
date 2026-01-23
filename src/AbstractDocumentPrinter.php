@@ -12,36 +12,37 @@ abstract class AbstractDocumentPrinter extends ExtendedFPDF
 {
     public bool $displayToFrom = true;
     public int $fromToBoldLineNumber = 0;
-    protected string $reference = '';
-    protected string $date = '';
-    protected string $time = '';
+    public string $reference = '';
+    public string $date = '';
 
     /**
      * @var string[]
      */
-    protected array $from = [''];
+    public array $from = [''];
 
     /**
      * @var string[]
      */
-    protected array $to = [''];
+    public array $to = [''];
 
     /**
      * @var AbstractInvoiceItem[]
      */
-    protected array $items = [];
+    public array $items = [];
 
     /**
      * @var TotalItem[]
      */
-    protected array $totals = [];
+    public array $totals = [];
+
+    public ?Badge $badgeData = null;
+    protected string $time = '';
 
     /**
      * @var CustomHeaderItem[]
      */
     protected array $customHeaders = [];
 
-    protected ?Badge $badgeData = null;
     protected int $columns = 2;
     protected bool $vatField = false;
     protected bool $priceField = false;
