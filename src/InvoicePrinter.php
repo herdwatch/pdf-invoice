@@ -557,6 +557,7 @@ class InvoicePrinter extends AbstractDocumentPrinter
         }
         $width_other = $this->addHeaderStartTuning();
         $this->addHeaderItem($this->lang['product'], $this->firstColumnWidth);
+        $this->addHeaderItem($this->lang['qty'], $width_other - 15.0);
         if ($this->vatField) {
             $this->addHeaderItem($this->lang['vat'], $width_other);
         }
