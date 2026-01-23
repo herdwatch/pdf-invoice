@@ -132,9 +132,10 @@ class MultiSpeciesInvoicePrinter extends InvoicePrinter
         }
 
         $width_other = $this->addHeaderStartTuning();
-        $this->addHeaderItem($this->lang['product'], $width_other);
-        $this->addHeaderItem('Notes', $width_other);
-        $this->addHeaderItem($this->lang['total'], $width_other);
+        $this->addHeaderItem($this->lang['product'], $this->firstColumnWidth);
+        $this->addHeaderItem($this->lang['qty'], $width_other - 15);
+        $this->addHeaderItem('Notes', $width_other * 2);
+        $this->addHeaderItem($this->lang['total'], $width_other + 10);
         $this->addHeaderEndLine();
     }
 

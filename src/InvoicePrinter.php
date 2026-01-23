@@ -567,7 +567,7 @@ class InvoicePrinter extends AbstractDocumentPrinter
             $this->addHeaderItem($this->lang['discount'], $width_other);
         }
 
-        $this->addHeaderItem($this->lang['total'], $width_other);
+        $this->addHeaderItem($this->lang['total'], $width_other + 10.0);
         $this->addHeaderEndLine();
     }
 }

@@ -74,9 +74,8 @@ class CreditNotePrinter extends InvoicePrinter
             return;
         }
         $width_other = $this->addHeaderStartTuning();
-        $this->addHeaderItem($this->lang['product'], $width_other);
-        $this->addHeaderItem($this->lang['discount'], $width_other);
-        $this->addHeaderItem($this->lang['qty'], $width_other);
+        $this->addHeaderItem($this->lang['product'], $this->firstColumnWidth);
+        $this->addHeaderItem($this->lang['qty'], $width_other - 15.0);
 
         if ($this->priceField) {
             $this->addHeaderItem($this->lang['price'], $width_other + 5.0);
