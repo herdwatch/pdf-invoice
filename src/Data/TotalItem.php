@@ -8,6 +8,7 @@ readonly class TotalItem
         private string $name,
         private string $value,
         private bool $colored,
+        private bool $negativeRed,
     ) {
     }
 
@@ -24,5 +25,10 @@ readonly class TotalItem
     public function isColored(): bool
     {
         return $this->colored;
+    }
+
+    public function isNegativeRed(): bool
+    {
+        return $this->negativeRed;
     }
 }

@@ -209,7 +209,7 @@ class InvoicePrinter extends AbstractDocumentPrinter
         $bottomMargin += 5 * count(explode(PHP_EOL, $this->footerNote));
         $this->SetY(-$bottomMargin);
         $this->SetFont($this->font, '', 8);
-        $this->SetTextColor(50, 50, 50);
+        $this->colorService->setTextColorData(Color::createGrey());
         $this->MultiCell(0, 5, $this->footerNote, 0, 'L');
         $this->Cell(
             0,
@@ -231,7 +231,7 @@ class InvoicePrinter extends AbstractDocumentPrinter
         $cellWidth = ($this->document['w'] - $this->margins['l'] - $this->margins['r']) / $totalsCount;
         // Colors, line width and bold font
         $this->colorService->setFillColorData($this->colorData);
-        $this->SetTextColor(255, 255, 255);
+        $this->colorService->setTextColorData(Color::createWhite());
         $this->colorService->setDrawColorData($this->colorData);
         $this->SetLineWidth(.3);
         $this->SetFont($this->font, 'b', 8);
@@ -249,11 +249,15 @@ class InvoicePrinter extends AbstractDocumentPrinter
         }
         $this->Ln();
         // Values
-        $this->SetTextColor(50, 50, 50);
+        $this->colorService->setTextColorData(Color::createGrey());
         $this->SetFont($this->font, 'b', 8);
-        $this->SetFillColor($bgColor, $bgColor, $bgColor);
+        $this->colorService->setFillColorData(Color::createGrey($bgColor));
         foreach ($this->totals as $y => $yValue) {
             $totalData = $yValue;
+            if ($totalData->isNegativeRed()) {
+                $this->SetFont($this->font, 'B', 8);
+                $this->SetTextColor(255, 0, 0);
+            }
             $this->Cell(
                 0 == $totalsCount % 2 ? (0 == $y % 2 ? $cellWidth + 5 : $cellWidth - 5) : $cellWidth,
                 6,
@@ -263,6 +267,8 @@ class InvoicePrinter extends AbstractDocumentPrinter
                 'C',
                 $totalData->isColored()
             );
+            $this->colorService->setTextColorData(Color::createGrey());
+            $this->SetFont($this->font, 'b', 8);
         }
         $this->Ln();
     }
@@ -273,21 +279,11 @@ class InvoicePrinter extends AbstractDocumentPrinter
     protected function addTotalsVertical(int $bgColor, int $cellHeight, int $widthQuantity, int $width_other): void
     {
         foreach ($this->totals as $total) {
-            $this->colorService->setTextColorData(Color::createGrey());
-            $this->SetFillColor($bgColor, $bgColor, $bgColor);
-            $this->Cell(1 + $this->firstColumnWidth, $cellHeight, '', 0, 0, 'L', 0);
-            $this->Cell($widthQuantity, $cellHeight, '', 0, 0, 'L', 0);
-            $this->Cell($this->columnSpacing, $cellHeight, '', 0, 0, 'L', 0);
-            for ($i = 0; $i < $this->columns - 4; ++$i) {
-                $this->Cell($width_other, $cellHeight, '', 0, 0, 'L', 0);
-                $this->Cell($this->columnSpacing, $cellHeight, '', 0, 0, 'L', 0);
-            }
-            $this->Cell($this->columnSpacing, $cellHeight, '', 0, 0, 'L', 0);
+            $this->initTotals($bgColor, $cellHeight, $widthQuantity, $width_other);
             if ($total->isColored()) {
                 $this->colorService->setTextColorData(Color::createWhite());
                 $this->colorService->setFillColorData($this->colorData);
             }
-            $this->SetFont($this->font, 'b', 8);
             $this->Cell(1, $cellHeight, '', 0, 0, 'L', 1);
             $this->Cell(
                 $width_other - 1,
@@ -300,10 +296,14 @@ class InvoicePrinter extends AbstractDocumentPrinter
             );
             $this->Cell($this->columnSpacing, $cellHeight, '', 0, 0, 'L', 0);
             $this->SetFont($this->font, 'b', 8);
-            $this->SetFillColor($bgColor, $bgColor, $bgColor);
+            $this->colorService->setFillColorData(Color::createGrey($bgColor));
             if ($total->isColored()) {
                 $this->colorService->setTextColorData(Color::createWhite());
                 $this->colorService->setFillColorData($this->colorData);
+            }
+            if ($total->isNegativeRed()) {
+                $this->SetFont($this->font, 'B', 8);
+                $this->SetTextColor(255, 0, 0);
             }
             $this->Cell(
                 $width_other,
@@ -342,7 +342,7 @@ class InvoicePrinter extends AbstractDocumentPrinter
             0,
             'L'
         );
-        $this->SetTextColor(50, 50, 50);
+        $this->colorService->setTextColorData(Color::createGrey());
         $this->SetFont($this->font, '', 9);
         $this->Cell(0, $lineHeight, $name, 0, 1, 'R');
     }
@@ -435,7 +435,7 @@ class InvoicePrinter extends AbstractDocumentPrinter
         foreach ($this->addText as $text) {
             if ('title' === $text->getType()) {
                 $this->SetFont($this->font, 'b', 9);
-                $this->SetTextColor(50, 50, 50);
+                $this->colorService->setTextColorData(Color::createGrey());
                 $this->Cell(
                     0,
                     10,
@@ -448,7 +448,7 @@ class InvoicePrinter extends AbstractDocumentPrinter
                 $this->addHeaderEndLine();
             }
             if ('paragraph' === $text->getType()) {
-                $this->SetTextColor(80, 80, 80);
+                $this->colorService->setTextColorData(Color::createGrey());
                 $this->SetFont($this->font, '', 8);
                 $this->MultiCell(
                     0,
@@ -462,7 +462,7 @@ class InvoicePrinter extends AbstractDocumentPrinter
             }
             if ('bold_paragraph' === $text->getType()) {
                 $this->SetFont($this->font, 'b', 8);
-                $this->SetTextColor(50, 50, 50);
+                $this->colorService->setTextColorData(Color::createGrey());
                 $this->MultiCell(
                     0,
                     4,
@@ -570,5 +570,20 @@ class InvoicePrinter extends AbstractDocumentPrinter
 
         $this->addHeaderItem($this->lang['total'], $width_other + 10.0);
         $this->addHeaderEndLine();
+    }
+
+    protected function initTotals(int $bgColor, int $cellHeight, float $widthQuantity, float $width_other): void
+    {
+        $this->colorService->setTextColorData(Color::createGrey());
+        $this->colorService->setFillColorData(Color::createGrey($bgColor));
+        $this->Cell(1 + $this->firstColumnWidth, $cellHeight, '', 0, 0, 'L', 0);
+        $this->Cell($widthQuantity, $cellHeight, '', 0, 0, 'L', 0);
+        $this->Cell($this->columnSpacing, $cellHeight, '', 0, 0, 'L', 0);
+        for ($i = 0; $i < $this->columns - 4; ++$i) {
+            $this->Cell($width_other, $cellHeight, '', 0, 0, 'L', 0);
+            $this->Cell($this->columnSpacing, $cellHeight, '', 0, 0, 'L', 0);
+        }
+        $this->Cell($this->columnSpacing, $cellHeight, '', 0, 0, 'L', 0);
+        $this->SetFont($this->font, 'b', 8);
     }
 }
