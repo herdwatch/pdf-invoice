@@ -153,12 +153,17 @@ abstract class AbstractDocumentPrinter extends ExtendedFPDF
         $this->customHeaders[] = new CustomHeaderItem($title, $content);
     }
 
-    public function addTotal(string $name, float $value, bool $colored = false): void
-    {
+    public function addTotal(
+        string $name,
+        float $value,
+        bool $colored = false,
+        bool $negativeRed = false,
+    ): void {
         $this->totals[] = new TotalItem(
             $name,
             $this->price($value),
-            $colored
+            $colored,
+            $negativeRed && $value < 0.0
         );
     }
 

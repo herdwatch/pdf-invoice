@@ -31,8 +31,8 @@ readonly class Color
         return new self(255, 255, 255);
     }
 
-    public static function createGrey(): self
+    public static function createGrey(int $bgColor = 50): self
     {
-        return new self(50, 50, 50);
+        return new self($bgColor, $bgColor, $bgColor);
     }
 }

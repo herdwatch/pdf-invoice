@@ -155,7 +155,7 @@ class MultiSpeciesInvoicePrinter extends InvoicePrinter
             );
             $cHeight = $this->printDescription($item->getDescription(), $x, $cHeight);
             $cHeight = $this->printExtendedDescription($item->getExtendedDescription(), $x, $cHeight);
-            $this->SetTextColor(50, 50, 50);
+            $this->colorService->setTextColorData(Color::createGrey());
             $this->SetFont($this->font, '', 8);
             $this->Cell($this->columnSpacing, $cHeight, '', 0, 0, 'L', 0);
             $this->Cell($widthQuantity, $cHeight, $item->getQuantity(), 0, 0, 'C', 1);
@@ -169,7 +169,7 @@ class MultiSpeciesInvoicePrinter extends InvoicePrinter
                 $cHeight,
                 $width_other
             );
-            $this->SetTextColor(50, 50, 50);
+            $this->colorService->setTextColorData(Color::createGrey());
             $this->SetFont($this->font, '', 8);
             $this->Ln();
             $this->Ln($this->columnSpacing);
@@ -212,7 +212,7 @@ class MultiSpeciesInvoicePrinter extends InvoicePrinter
             0,
             'L'
         );
-        $this->SetTextColor(50, 50, 50);
+        $this->colorService->setTextColorData(Color::createGrey());
         $this->SetFont($this->font, '', 9);
         $this->Cell(0, $lineHeight, $this->servicePeriod, 0, 1, 'R');
     }
@@ -227,7 +227,7 @@ class MultiSpeciesInvoicePrinter extends InvoicePrinter
         }
         $resetX = (float) $this->GetX();
         $resetY = (float) $this->GetY();
-        $this->SetTextColor(120, 120, 120);
+        $this->colorService->setTextColorData(Color::createGrey(120));
         $this->SetXY($x, $this->GetY() + $cHeight);
         $this->SetFont($this->font, '', $this->fontSizeProductDescription);
         $this->MultiCell(
@@ -279,21 +279,11 @@ class MultiSpeciesInvoicePrinter extends InvoicePrinter
     /**
      * @throws PDFInvoiceException
      */
-    private function addSpecialTotals(mixed $bgColor, int $cellHeight, mixed $widthQuantity, mixed $width_other): void
+    private function addSpecialTotals(int $bgColor, int $cellHeight, float $widthQuantity, float $width_other): void
     {
         foreach ($this->specialTotals as $specialTotal) {
-            $this->SetTextColor(50, 50, 50);
-            $this->SetFillColor($bgColor, $bgColor, $bgColor);
-            $this->Cell(1 + $this->firstColumnWidth, $cellHeight, '', 0, 0, 'L', 0);
-            $this->Cell($widthQuantity, $cellHeight, '', 0, 0, 'L', 0);
-            $this->Cell($this->columnSpacing, $cellHeight, '', 0, 0, 'L', 0);
-            for ($i = 0; $i < $this->columns - 4; ++$i) {
-                $this->Cell($width_other, $cellHeight, '', 0, 0, 'L', 0);
-                $this->Cell($this->columnSpacing, $cellHeight, '', 0, 0, 'L', 0);
-            }
-            $this->Cell($this->columnSpacing, $cellHeight, '', 0, 0, 'L', 0);
+            $this->initTotals($bgColor, $cellHeight, $widthQuantity, $width_other);
             $this->setColors($specialTotal);
-            $this->SetFont($this->font, 'b', 8);
             $this->Cell(1, $cellHeight, '', 0, 0, 'L', 1);
             $this->Cell(
                 $width_other - 1,
@@ -306,7 +296,7 @@ class MultiSpeciesInvoicePrinter extends InvoicePrinter
             );
             $this->Cell($this->columnSpacing, $cellHeight, '', 0, 0, 'L', 0);
             $this->SetFont($this->font, 'b', 8);
-            $this->SetFillColor($bgColor, $bgColor, $bgColor);
+            $this->colorService->setTextColorData(Color::createGrey($bgColor));
             $this->setColors($specialTotal);
             $this->Cell(
                 $width_other,
