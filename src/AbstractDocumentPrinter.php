@@ -4,6 +4,7 @@ namespace Herdwatch\PdfInvoice;
 
 use Herdwatch\PdfInvoice\Data\AbstractInvoiceItem;
 use Herdwatch\PdfInvoice\Data\Badge;
+use Herdwatch\PdfInvoice\Data\Color;
 use Herdwatch\PdfInvoice\Data\CustomHeaderItem;
 use Herdwatch\PdfInvoice\Data\InvoiceItem;
 use Herdwatch\PdfInvoice\Data\TotalItem;
@@ -199,7 +200,7 @@ abstract class AbstractDocumentPrinter extends ExtendedFPDF
         string $name,
         float $width_other,
     ): void {
-        $this->Cell($this->columnSpacing, 10, '', 0, 0, 'L', 0);
+        $this->addSpacingCell(10);
         $this->Cell(
             $width_other,
             10,
@@ -248,9 +249,9 @@ abstract class AbstractDocumentPrinter extends ExtendedFPDF
         }
         $this->printFirstDescription($item->getDescription());
         $cHeight = $cellHeight;
-        $this->SetFont($this->font, 'b', 8);
-        $this->SetTextColor(50, 50, 50);
-        $this->SetFillColor($bgColor, $bgColor, $bgColor);
+        $this->setStandardFont();
+        $this->colorService->setTextColorData(Color::createGrey());
+        $this->colorService->setFillColorData(Color::createGrey($bgColor));
         $this->Cell(1, $cHeight, '', 0, 0, 'L', 1);
 
         return $cHeight;
@@ -283,7 +284,7 @@ abstract class AbstractDocumentPrinter extends ExtendedFPDF
     protected function printFirstPage(int $lineHeight): void
     {
         if (1 === $this->PageNo()) {
-            $tmpDimensions = $this->dimensions[1] ?? 0;
+            $tmpDimensions = $this->dimensions[1] ?? 0.0;
             if (($this->margins['t'] + $tmpDimensions) > $this->GetY()) {
                 $this->SetY($this->margins['t'] + $tmpDimensions + 5);
             } else {
@@ -330,7 +331,7 @@ abstract class AbstractDocumentPrinter extends ExtendedFPDF
             $iMax = max($countFrom, $countTo);
             for ($i = 0; $i < $iMax; ++$i) {
                 if ($i === $this->fromToBoldLineNumber) {
-                    $this->SetTextColor(50, 50, 50);
+                    $this->colorService->setTextColorData(Color::createGrey());
                     $this->SetFont($this->font, 'B', 10);
                 }
                 // avoid undefined error if TO and FROM array lengths are different
@@ -339,7 +340,7 @@ abstract class AbstractDocumentPrinter extends ExtendedFPDF
                 $this->printLineDisplayToFrom($isEmptyFrom, $isEmptyTo, $i, $width, $lineHeight);
                 if ($i === $this->fromToBoldLineNumber) {
                     $this->SetFont($this->font, '', 8);
-                    $this->SetTextColor(100, 100, 100);
+                    $this->colorService->setTextColorData(Color::createGrey(100));
                     $this->Ln(7);
                 } else {
                     $this->Ln(5);
@@ -467,9 +468,9 @@ abstract class AbstractDocumentPrinter extends ExtendedFPDF
             1
         );
         $cHeight = $this->printDescription($item->getDescription(), $x, $cHeight);
-        $this->colorService->setTextColorData(Data\Color::createGrey());
+        $this->colorService->setTextColorData(Color::createGrey());
         $this->SetFont($this->font, '', 8);
-        $this->Cell($this->columnSpacing, $cHeight, '', 0, 0, 'L', 0);
+        $this->addSpacingCell($cHeight);
         $this->Cell($widthQuantity, $cHeight, $item->getQuantity(), 0, 0, 'C', 1);
 
         return $cHeight;
@@ -478,7 +479,7 @@ abstract class AbstractDocumentPrinter extends ExtendedFPDF
     /**
      * @throws PDFInvoiceException
      */
-    protected function printDescription(?string $description, int $x, float $cHeight): float
+    protected function printDescription(?string $description, int $x, float $cHeight, float $extraHeight = 8.0): float
     {
         if (empty($description)) {
             return $cHeight;
@@ -486,8 +487,8 @@ abstract class AbstractDocumentPrinter extends ExtendedFPDF
 
         $resetX = (float) $this->GetX();
         $resetY = (float) $this->GetY();
-        $this->SetTextColor(120, 120, 120);
-        $this->SetXY($x, $this->GetY() + 8);
+        $this->colorService->setTextColorData(Color::createGrey(120));
+        $this->SetXY($x, $this->GetY() + $extraHeight);
         $this->SetFont($this->font, '', $this->fontSizeProductDescription);
         $this->MultiCell(
             $this->firstColumnWidth,
@@ -519,7 +520,7 @@ abstract class AbstractDocumentPrinter extends ExtendedFPDF
         float $cHeight,
         float $width_other,
     ): void {
-        $this->Cell($this->columnSpacing, $cHeight, '', 0, 0, 'L', 0);
+        $this->addSpacingCell($cHeight);
         if (!empty($fieldValue)) {
             $this->Cell(
                 $width_other,
@@ -563,6 +564,22 @@ abstract class AbstractDocumentPrinter extends ExtendedFPDF
         } else {
             $this->Ln(18);
         }
+    }
+
+    protected function addSpacingCell(float $cellHeight): void
+    {
+        $this->Cell($this->columnSpacing, $cellHeight, '', 0, 0, 'L', 0);
+    }
+
+    protected function setStandardFont(): void
+    {
+        $this->SetFont($this->font, 'b', 8);
+    }
+
+    protected function addSpacing(): void
+    {
+        $this->Ln();
+        $this->Ln($this->columnSpacing);
     }
 
     /**
