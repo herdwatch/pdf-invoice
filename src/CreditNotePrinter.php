@@ -48,7 +48,7 @@ class CreditNotePrinter extends InvoicePrinter
             $this->discountField = true;
             $this->recalculateColumns();
         }
-        $this->SetFont($this->font, 'b', 8);
+        $this->setStandardFont();
         if (null !== $vatPercent) {
             $vatPercentField = $this->price($vatPercent, '% ');
         }
@@ -141,8 +141,7 @@ class CreditNotePrinter extends InvoicePrinter
                     $width_other
                 );
             }
-            $this->Ln();
-            $this->Ln($this->columnSpacing);
+            $this->addSpacing();
         }
     }
 }
