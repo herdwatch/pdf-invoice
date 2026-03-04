@@ -36,6 +36,7 @@ class InvoicePrinter extends AbstractDocumentPrinter
 
     public string $footerNote = '';
     public bool $productsEnded = false;
+    protected float $totalWidthCorrectionNumber = 1.9;
 
     public function setDue(string $date): void
     {
@@ -286,7 +287,7 @@ class InvoicePrinter extends AbstractDocumentPrinter
             }
             $this->Cell(1, $cellHeight, '', 0, 0, 'L', 1);
             $this->Cell(
-                $width_other - 1,
+                $width_other - 0.85,
                 $cellHeight,
                 $this->changeCharset($total->getName()),
                 0,
@@ -306,7 +307,7 @@ class InvoicePrinter extends AbstractDocumentPrinter
                 $this->SetTextColor(255, 0, 0);
             }
             $this->Cell(
-                $width_other,
+                $width_other + 0.15,
                 $cellHeight,
                 $this->changeCharset($total->getValue()),
                 0,
@@ -580,7 +581,7 @@ class InvoicePrinter extends AbstractDocumentPrinter
     {
         $this->colorService->setTextColorData(Color::createGrey());
         $this->colorService->setFillColorData(Color::createGrey($bgColor));
-        $this->Cell(1 + $this->firstColumnWidth, $cellHeight, '', 0, 0, 'L', 0);
+        $this->Cell($this->firstColumnWidth + $this->totalWidthCorrectionNumber, $cellHeight, '', 0, 0, 'L', 0);
         $this->addColumn($widthQuantity, $cellHeight);
         for ($i = 0; $i < $this->columns - $columns; ++$i) {
             $this->addColumn($width_other, $cellHeight);
