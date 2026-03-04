@@ -13,6 +13,7 @@ class MultiSpeciesInvoicePrinter extends InvoicePrinter
 {
     private const string SERVICE_PERIOD = 'Service period';
 
+    protected float $totalWidthCorrectionNumber = 1.6;
     private string $servicePeriod = '';
 
     /**
@@ -205,7 +206,7 @@ class MultiSpeciesInvoicePrinter extends InvoicePrinter
             }
             $this->Cell(1, $cellHeight, '', 0, 0, 'L', 1);
             $this->Cell(
-                $width_other * 2 - 1,
+                $width_other * 2 - 0.6,
                 $cellHeight,
                 $this->changeCharset($total->getName()),
                 0,
@@ -225,7 +226,7 @@ class MultiSpeciesInvoicePrinter extends InvoicePrinter
                 $this->SetTextColor(255, 0, 0);
             }
             $this->Cell(
-                $width_other,
+                $width_other + 0.2,
                 $cellHeight,
                 $this->changeCharset($total->getValue()),
                 0,
@@ -295,7 +296,7 @@ class MultiSpeciesInvoicePrinter extends InvoicePrinter
             $this->setColors($specialTotal);
             $this->Cell(1, $cellHeight, '', 0, 0, 'L', 1);
             $this->Cell(
-                $width_other * 2 - 1,
+                $width_other * 2 - 0.6,
                 $cellHeight,
                 $this->changeCharset($specialTotal->getName()),
                 0,
@@ -308,7 +309,7 @@ class MultiSpeciesInvoicePrinter extends InvoicePrinter
             $this->colorService->setTextColorData(Color::createGrey($bgColor));
             $this->setColors($specialTotal);
             $this->Cell(
-                $width_other,
+                $width_other + 0.2,
                 $cellHeight,
                 $this->changeCharset($specialTotal->getValue()),
                 0,
